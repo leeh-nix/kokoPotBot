@@ -1,21 +1,25 @@
+import datetime
 import discord
-from discord import app_commands
 from discord.ext import commands
 from discord.ext.commands import check
+import asyncio
 import dotenv
 import os
 
+import pytz
 from emojifier import emojify
-from keep_alive import keep_alive
+import tracemalloc
 
+
+tracemalloc.start()
 dotenv.load_dotenv()
 TOKEN = os.getenv("TOKEN")
-
 
 intents = discord.Intents.default()
 intents.message_content = True
 command_prefix = "k!"
 guild_id = 607520631944118292
+guild = 607520631944118292
 
 activity = discord.Activity(
     name="with your emotions 😘", type=discord.ActivityType.playing
@@ -23,17 +27,23 @@ activity = discord.Activity(
 
 bot = commands.Bot(command_prefix=command_prefix, activity=activity, intents=intents)
 
+from pymongo import MongoClient
+client = MongoClient(mongodb+srv://kokose:gfelUa0fyUUVKO0M@kokosbotpot.rokrapr.mongodb.net/?retryWrites=true&w=majority)
+
+
 # Confirmation on bot login
 @bot.event
 async def on_ready():
     print("We have logged in as {0.user}".format(bot))
-    # try:
-    #     # synced = await bot.tree.sync()
-    #     synced = await bot.tree.sync(guild=discord.Object(...))
-    #     # synced = await Bot.copy_global_to(*, 607520631944118292)
-    #     print(f"Synced {len(synced)} command(s)")
-    # except Exception as e:
-    #     print(e)
+    try:
+        # synced = await bot.tree.sync()
+        bot.tree.copy_global_to(guild=guild)
+        synced = await bot.tree.sync(guild=guild)
+        # synced = await bot.tree.sync(guild=discord.Object(...))
+        # synced = await Bot.copy_global_to(*, 607520631944118292)
+        print(f"Synced {len(synced)} command(s)")
+    except Exception as e:
+        print(e)
 
 
 # @bot.commands.command()
@@ -45,7 +55,6 @@ async def on_ready():
 # except Exception as e:
 #     print(e)
 
-# Commands start from here
 
 # Checking guild permissions
 def is_in_guild(guild_id):
@@ -54,21 +63,64 @@ def is_in_guild(guild_id):
 
     return check(predicate)
 
+
+# Commands start from here
+
+# TODO: check bot.load_extension() and reload_extension()
+# TODO: check .uptime or some method for calculating the uptime of the bot
+
+# @bot.command()
+# async def loadextension(ctx):
+#     await ctx.send("Loading utils extension")
+#     print("Loading utils extension")
+#     await bot.load_extension('utils')
+
+
+# @bot.hybrid_command()
+# @commands.guild_only()
+# @is_in_guild(607520631944118292)
+# async def evalu(ctx, *args):
+#     args = list(args)
+#     expr = ' '.join(str(i)for i in args[1:-1])
+#     try:
+#         print("cmd: ", expr)
+#         result = eval(expr)
+#         if asyncio.iscoroutine(result):
+#             result = await result
+#         await ctx.send(f"result: {result}")
+#     except Exception as e:
+#         print(e)
+#         await ctx.send(f"An error occurred: {e}")
+
+
+# @bot.add_command(command=command)
+
+
+# help
+@bot.command()
+async def helpme(ctx):
+    await ctx.channel.send(
+        """```
+k!ping || Pings the bot
+k!send <Channel/Channel ID> <Message you want to send> || Sends the message provided to the specified channel.
+k!time || Returns the current time
+k!remind <Duration in minutes> <Time unit> <Reminder text> || Sets a reminder for the specified time```"""
+    )
+
+
 # Slash command to check info of a user
 @bot.hybrid_group(fallback="enter")
 # @bot.hybrid_command()
 async def tag(message, member: discord.Member):
     """
-        Displays the info of the user: the joining date and their current avatar
-        
-        Usage: /tag enter <@user>
-    """
-    await message.send(f"{member.mention} joined on {member.joined_at} {member.display_avatar}")
+    Displays the info of the user: the joining date and their current avatar
 
-# @tag.command()
-# async def emojifi(message, *lst):
-#     lst = list(lst)
-#     await message.send(emojify(lst))
+    Usage: /tag enter <@user>
+    """
+    await message.send(
+        f"{member.mention} joined on {member.joined_at} {member.display_avatar}"
+    )
+
 
 @tag.error
 async def info_error(ctx, error):
@@ -76,37 +128,70 @@ async def info_error(ctx, error):
         await ctx.send("I could not find that member...")
 
 
-@bot.command()
 # @commands.is_owner()
-@is_in_guild(607520631944118292)
-async def send(ctx):
-    # Prompt the user for the channel ID and message content
-    await ctx.send("Enter the channel ID:")
-    channel_id_msg = await bot.wait_for(
-        "message", check=lambda m: m.author == ctx.author
-    )
-    channel_id = int(channel_id_msg.content)
-
-    await ctx.send("Enter the message content:")
-    message_content_msg = await bot.wait_for(
-        "message", check=lambda m: m.author == ctx.author
-    )
-    message_content = message_content_msg.content
-
-    # Retrieve the TextChannel object for the specified ID
+@bot.hybrid_group(name="send", description="Sends a message to a specified channel.")
+# @is_in_guild(607520631944118292)
+async def send(ctx, channel_id: int, *, message):
     channel = bot.get_channel(channel_id)
+    if channel:
+        await channel.send(message)
+        await ctx.send("Message sent successfully.")
+    else:
+        await ctx.send("Invalid channel ID.")
 
-    if channel is None:
-        await ctx.send("Invalid channel ID")
-        return
 
-    await channel.send(message_content)
+@send.error
+async def info_error(ctx, error):
+    if isinstance(error, commands.BadArgument):
+        await ctx.send("Please enter the correct channel...")
 
 
 # @bot.command()
 # async def emoji(message, *lst):
 #     lst = list(lst)
 #     await message.channel.send(emojify(lst))
+
+
+# current time
+@bot.command()
+async def time(ctx):
+    current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    await ctx.send(f"The current time is: {current_time}")
+
+
+# reminder command
+@bot.command()
+async def remind(ctx, duration: int, time_unit: str, *, reminder: str):
+    time_unit = time_unit.lower()
+    valid_units = ["minute", "minutes", "hour", "hours", "day", "days"]
+
+    if time_unit not in valid_units:
+        await ctx.send(
+            "Invalid time unit. Please use 'minute(s)', 'hour(s)', or 'day(s)'."
+        )
+        return
+
+    if duration < 1:
+        await ctx.send("Invalid duration. Please provide a positive number.")
+        return
+
+    eastern = pytz.timezone("US/Eastern")
+    current_time = datetime.datetime.now(eastern)
+
+    if time_unit == "minute" or time_unit == "minutes":
+        reminder_time = current_time + datetime.timedelta(minutes=duration)
+    elif time_unit == "hour" or time_unit == "hours":
+        reminder_time = current_time + datetime.timedelta(hours=duration)
+    elif time_unit == "day" or time_unit == "days":
+        reminder_time = current_time + datetime.timedelta(days=duration)
+
+    await ctx.send(
+        f"Reminder set for {reminder_time} EDT. I will notify you in {duration} {time_unit}."
+    )
+
+    delta = (reminder_time - current_time).total_seconds()
+    await asyncio.sleep(delta)
+    await ctx.send(f"{ctx.author.mention}, here's your reminder: {reminder}")
 
 
 @bot.command()
@@ -116,7 +201,7 @@ async def hello(message):
 
 @bot.hybrid_command()
 async def ping(message):
-    await message.send("Let's go Baby!")
+    await message.send(f"Let's go Baby! ```{bot.latency * 1000} ms```")
 
 
 @bot.command()
@@ -137,7 +222,7 @@ async def thanks(message):
 #     if message.content.startswith('hello'):
 #         await message.channel.send("Hellooo  how are you")
 
-# keep_alive()
+# ============================================================================================================================
 try:
     bot.run(TOKEN)
 except discord.HTTPException as e:
