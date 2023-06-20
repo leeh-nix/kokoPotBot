@@ -5,7 +5,8 @@ from discord.ext.commands import check
 import asyncio
 import dotenv
 import os
-
+from pymongo.mongo_client import MongoClient
+from pymongo.server_api import ServerApi
 import pytz
 from emojifier import emojify
 import tracemalloc
@@ -14,6 +15,8 @@ import tracemalloc
 tracemalloc.start()
 dotenv.load_dotenv()
 TOKEN = os.getenv("TOKEN")
+# URI = os.getenv("URI")
+
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -27,9 +30,20 @@ activity = discord.Activity(
 
 bot = commands.Bot(command_prefix=command_prefix, activity=activity, intents=intents)
 
-from pymongo import MongoClient
-client = MongoClient(mongodb+srv://kokose:gfelUa0fyUUVKO0M@kokosbotpot.rokrapr.mongodb.net/?retryWrites=true&w=majority)
-
+URI = "mongodb+srv://kokose:gfelUa0fyUUVKO0M@kokosbotpot.rokrapr.mongodb.net/?retryWrites=true&w=majority"
+# Create a new client and connect to the server
+client = MongoClient(URI, server_api=ServerApi('1'))
+# Send a ping to confirm a successful connection
+# @bot.command()
+# async def dbconnect(ctx):
+try:
+    client.admin.command('ping')
+    print("Pinged your deployment. You successfully connected to MongoDB!")
+except Exception as e:
+    print(e)
+    
+db = client.get_database('kokospotbot_db')
+reminder = db.reminder #collection: reminder
 
 # Confirmation on bot login
 @bot.event
@@ -161,7 +175,7 @@ async def time(ctx):
 
 # reminder command
 @bot.command()
-async def remind(ctx, duration: int, time_unit: str, *, reminder: str):
+async def remind(ctx, duration: int, time_unit: str, *, txt: str):
     time_unit = time_unit.lower()
     valid_units = ["minute", "minutes", "hour", "hours", "day", "days"]
 
@@ -174,24 +188,24 @@ async def remind(ctx, duration: int, time_unit: str, *, reminder: str):
     if duration < 1:
         await ctx.send("Invalid duration. Please provide a positive number.")
         return
+    
+    new_reminder = {
+        'duration': duration,
+        'time_unit' : time_unit,
+        'txt': txt
+    }
+    print(new_reminder)
+    reminder.insert_one(new_reminder)
+    # ctx.send(reminder.count_documents({}), "done!")
 
-    eastern = pytz.timezone("US/Eastern")
-    current_time = datetime.datetime.now(eastern)
 
-    if time_unit == "minute" or time_unit == "minutes":
-        reminder_time = current_time + datetime.timedelta(minutes=duration)
-    elif time_unit == "hour" or time_unit == "hours":
-        reminder_time = current_time + datetime.timedelta(hours=duration)
-    elif time_unit == "day" or time_unit == "days":
-        reminder_time = current_time + datetime.timedelta(days=duration)
+    # await ctx.send(
+    #     f"Reminder set for {reminder_time} EDT. I will notify you in {duration} {time_unit}."
+    # )
 
-    await ctx.send(
-        f"Reminder set for {reminder_time} EDT. I will notify you in {duration} {time_unit}."
-    )
-
-    delta = (reminder_time - current_time).total_seconds()
-    await asyncio.sleep(delta)
-    await ctx.send(f"{ctx.author.mention}, here's your reminder: {reminder}")
+    # delta = (reminder_time - current_time).total_seconds()
+    # await asyncio.sleep(delta)
+    # await ctx.send(f"{ctx.author.mention}, here's your reminder: {reminder}")
 
 
 @bot.command()
