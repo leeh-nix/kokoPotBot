@@ -5,8 +5,6 @@ from discord.ext.commands import check
 import asyncio
 import dotenv
 import os
-
-import pytz
 from emojifier import emojify
 import tracemalloc
 
@@ -26,9 +24,6 @@ activity = discord.Activity(
 )
 
 bot = commands.Bot(command_prefix=command_prefix, activity=activity, intents=intents)
-
-from pymongo import MongoClient
-client = MongoClient(mongodb+srv://kokose:gfelUa0fyUUVKO0M@kokosbotpot.rokrapr.mongodb.net/?retryWrites=true&w=majority)
 
 
 # Confirmation on bot login
@@ -96,18 +91,6 @@ def is_in_guild(guild_id):
 # @bot.add_command(command=command)
 
 
-# help
-@bot.command()
-async def helpme(ctx):
-    await ctx.channel.send(
-        """```
-k!ping || Pings the bot
-k!send <Channel/Channel ID> <Message you want to send> || Sends the message provided to the specified channel.
-k!time || Returns the current time
-k!remind <Duration in minutes> <Time unit> <Reminder text> || Sets a reminder for the specified time```"""
-    )
-
-
 # Slash command to check info of a user
 @bot.hybrid_group(fallback="enter")
 # @bot.hybrid_command()
@@ -126,7 +109,6 @@ async def tag(message, member: discord.Member):
 async def info_error(ctx, error):
     if isinstance(error, commands.BadArgument):
         await ctx.send("I could not find that member...")
-
 
 # @commands.is_owner()
 @bot.hybrid_group(name="send", description="Sends a message to a specified channel.")
@@ -162,34 +144,42 @@ async def time(ctx):
 # reminder command
 @bot.command()
 async def remind(ctx, duration: int, time_unit: str, *, reminder: str):
-    time_unit = time_unit.lower()
-    valid_units = ["minute", "minutes", "hour", "hours", "day", "days"]
+    # eastern = pytz.timezone('US/Eastern')
+    # current_time = datetime.datetime.now(eastern).timestamp()
+    valid_units = [
+        "second",
+        "seconds",
+        "minute",
+        "minutes",
+        "hour",
+        "hours",
+        "day",
+        "days",
+    ]
 
     if time_unit not in valid_units:
         await ctx.send(
             "Invalid time unit. Please use 'minute(s)', 'hour(s)', or 'day(s)'."
         )
         return
-
     if duration < 1:
-        await ctx.send("Invalid duration. Please provide a positive number.")
+        return "Invalid time. Please provide a positive number"
+
+    current_time = datetime.datetime.now().timestamp()
+
+    if timestamp < current_time:
+        await ctx.send("Invalid timestamp. Please provide a future timestamp.")
         return
 
-    eastern = pytz.timezone("US/Eastern")
-    current_time = datetime.datetime.now(eastern)
-
-    if time_unit == "minute" or time_unit == "minutes":
-        reminder_time = current_time + datetime.timedelta(minutes=duration)
-    elif time_unit == "hour" or time_unit == "hours":
-        reminder_time = current_time + datetime.timedelta(hours=duration)
-    elif time_unit == "day" or time_unit == "days":
-        reminder_time = current_time + datetime.timedelta(days=duration)
-
-    await ctx.send(
-        f"Reminder set for {reminder_time} EDT. I will notify you in {duration} {time_unit}."
+    delta = timestamp - current_time
+    reminder_time = datetime.datetime.fromtimestamp(timestamp).strftime(
+        "%Y-%m-%d %H:%M:%S"
     )
 
-    delta = (reminder_time - current_time).total_seconds()
+    await ctx.send(
+        f"Reminder set for {reminder_time}. I will notify you in {delta//1} seconds."
+    )
+
     await asyncio.sleep(delta)
     await ctx.send(f"{ctx.author.mention}, here's your reminder: {reminder}")
 
@@ -222,7 +212,86 @@ async def thanks(message):
 #     if message.content.startswith('hello'):
 #         await message.channel.send("Hellooo  how are you")
 
+# keep_alive()
+
+
 # ============================================================================================================================
+
+
+def insert_returns(body):
+    # insert return stmt if the last expression is a expression statement
+    if isinstance(body[-1], ast.Expr):
+        body[-1] = ast.Return(body[-1].value)
+        ast.fix_missing_locations(body[-1])
+
+    # for if statements, we insert returns into the body and the orelse
+    if isinstance(body[-1], ast.If):
+        insert_returns(body[-1].body)
+        insert_returns(body[-1].orelse)
+
+    # for with blocks, again we insert returns into the body
+    if isinstance(body[-1], ast.With):
+        insert_returns(body[-1].body)
+
+
+@bot.command()
+@is_in_guild(607520631944118292)
+async def eval_fn(ctx, *, cmd):
+    """Evaluates input.
+
+    Input is interpreted as newline seperated statements.
+    If the last statement is an expression, that is the return value.
+
+    Usable globals:
+        - `bot`: the bot instance
+        - `discord`: the discord module
+        - `commands`: the discord.ext.commands module
+        - `ctx`: the invokation context
+        - `__import__`: the builtin `__import__` function
+
+    Such that `>eval 1 + 1` gives `2` as the result.
+
+    The following invokation will cause the bot to send the text '9'
+    to the channel of invokation and return '3' as the result of evaluating
+
+    >eval ```
+    a = 1 + 2
+    b = a * 2
+    await ctx.send(a + b)
+    a
+    ```
+    """
+    fn_name = "_eval_expr"
+
+    cmd = cmd.strip("` ")
+
+    # add a layer of indentation
+    cmd = "\n".join(f"    {i}" for i in cmd.splitlines())
+
+    # wrap in async def body
+    body = f"async def {fn_name}():\n{cmd}"
+
+    parsed = ast.parse(body)
+    body = parsed.body[0].body
+
+    insert_returns(body)
+
+    env = {
+        "bot": ctx.bot,
+        "discord": discord,
+        "commands": commands,
+        "ctx": ctx,
+        "__import__": __import__,
+    }
+    exec(compile(parsed, filename="<ast>", mode="exec"), env)
+
+    result = await eval(f"{fn_name}()", env)
+    await ctx.send(result)
+
+
+# TODO @command.
+
+
 try:
     bot.run(TOKEN)
 except discord.HTTPException as e:
