@@ -1,7 +1,7 @@
 import re
 import datetime
 
-def remind(message: str):
+def reminderTime(message: str):
     # print("message ", message)
     pattern = re.compile(
         (

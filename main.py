@@ -6,7 +6,7 @@ import dotenv
 import os
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
-from remind import remind
+from remind import reminderTime
 # from checkReminders import checkReminders
 import asyncio
 import tracemalloc
@@ -78,11 +78,11 @@ async def checkReminders(ctx):
             # Do something with the reminder, e.g., send a message to the member
             if duration == currentTime:
                 # print("duration inside if", duration, "& current time", currentTime)
-                await ctx.channel.send(f"<@{userId}> : {text}")
+                await ctx.channel.send("Reminder added successfully")
+                reminderCollection.delete_one({"userID": userId})
             else: pass
 
         # Remove the reminder from the collection after processing
-        reminderCollection.delete_one({"userID": userId})
 
         # print("Checked reminders.")
 
@@ -229,12 +229,12 @@ async def time(ctx):
 
 # reminder command
 @bot.command()
-async def remindCmd(ctx,*, message: str):
+async def remind(ctx,*, message: str):
     print("=================================================")
     print(message, type(message))
     givenMessage = "".join(message)
     
-    returnedList = list(remind(givenMessage))
+    returnedList = list(reminderTime(givenMessage))
     print("time: ", returnedList[0], "string: ", returnedList[1])
     duration = returnedList[0]
     text = returnedList[1]
@@ -245,7 +245,7 @@ async def remindCmd(ctx,*, message: str):
     newReminder = {"userId": user,"channelId": channelId, "duration": duration, "text": text}
     print(newReminder)
     reminderCollection.insert_one(newReminder)
-    ctx.sent(f"{ctx.author.mention}, here's your reminder: {text}")
+    await ctx.send(f"{ctx.author.mention}, here's your reminder: {text}")
     print(reminderCollection.count_documents({}), "done!")
     # ctx.send(reminder.count_documents({}), "done!")
 
