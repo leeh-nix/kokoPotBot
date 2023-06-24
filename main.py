@@ -2,20 +2,20 @@ import datetime
 import discord
 from discord.ext import commands
 from discord.ext.commands import check
-import asyncio
 import dotenv
 import os
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
-import pytz
-from emojifier import emojify
+from remind import remind
+# from checkReminders import checkReminders
+import asyncio
 import tracemalloc
 
 
 tracemalloc.start()
 dotenv.load_dotenv()
 TOKEN = os.getenv("TOKEN")
-# URI = os.getenv("URI")
+URI = os.getenv("URI")
 
 
 intents = discord.Intents.default()
@@ -30,7 +30,6 @@ activity = discord.Activity(
 
 bot = commands.Bot(command_prefix=command_prefix, activity=activity, intents=intents)
 
-URI = "mongodb+srv://kokose:gfelUa0fyUUVKO0M@kokosbotpot.rokrapr.mongodb.net/?retryWrites=true&w=majority"
 # Create a new client and connect to the server
 client = MongoClient(URI, server_api=ServerApi('1'))
 # Send a ping to confirm a successful connection
@@ -42,8 +41,8 @@ try:
 except Exception as e:
     print(e)
     
-db = client.get_database('kokospotbot_db')
-reminder = db.reminder #collection: reminder
+db = client.get_database("kokospotbot_db")
+reminderCollection = db.reminder    #collection: reminder
 
 # Confirmation on bot login
 @bot.event
@@ -59,6 +58,61 @@ async def on_ready():
     except Exception as e:
         print(e)
 
+
+@bot.command()
+async def checkReminders(ctx):
+    while True:
+        currentTime = datetime.datetime.now().timestamp()//1
+
+        # Get reminders from the database collection that match the current time
+        reminders = reminderCollection.find({"duration": {"$lte": currentTime}})
+        
+        for reminder in reminders:
+            duration = reminder["duration"]
+            text = reminder["text"]
+            userId = reminder["userId"]
+            channel = reminder["channelId"]
+            # print("currenttime", currentTime)
+            # print("duration", duration)
+            # print(text)
+            # Do something with the reminder, e.g., send a message to the member
+            if duration == currentTime:
+                # print("duration inside if", duration, "& current time", currentTime)
+                await ctx.channel.send(f"<@{userId}> : {text}")
+            else: pass
+
+        # Remove the reminder from the collection after processing
+        reminderCollection.delete_one({"userID": userId})
+
+        # print("Checked reminders.")
+
+        # Wait for a specific duration before checking again (e.g., 1 second)
+        await asyncio.sleep(1)
+
+# @bot.command()
+# async def remindPing(ctx):
+#     await ctx
+async def startReminderLoop():
+    while True:
+        await checkReminders()
+
+@bot.command()
+async def startRemindLoop(ctx):
+    loop = asyncio.get_running_loop()
+    loop.create_task(startReminderLoop())
+    await ctx.send("Reminder loop started")
+
+@startRemindLoop.error
+async def info_error(ctx, error):
+    if isinstance(error, commands.BadArgument):
+        await ctx.send("Error starting reminder loop")
+
+
+@bot.command()
+async def test(ctx, *, message):
+    print(ctx)
+    print(message)
+    await ctx.send(message)
 
 # @bot.commands.command()
 # async def sync() -> None:
@@ -145,8 +199,8 @@ async def info_error(ctx, error):
 # @commands.is_owner()
 @bot.hybrid_group(name="send", description="Sends a message to a specified channel.")
 # @is_in_guild(607520631944118292)
-async def send(ctx, channel_id: int, *, message):
-    channel = bot.get_channel(channel_id)
+async def send(ctx, channelId: int, *, message):
+    channel = bot.get_channel(channelId)
     if channel:
         await channel.send(message)
         await ctx.send("Message sent successfully.")
@@ -175,27 +229,24 @@ async def time(ctx):
 
 # reminder command
 @bot.command()
-async def remind(ctx, duration: int, time_unit: str, *, txt: str):
-    time_unit = time_unit.lower()
-    valid_units = ["minute", "minutes", "hour", "hours", "day", "days"]
-
-    if time_unit not in valid_units:
-        await ctx.send(
-            "Invalid time unit. Please use 'minute(s)', 'hour(s)', or 'day(s)'."
-        )
-        return
-
-    if duration < 1:
-        await ctx.send("Invalid duration. Please provide a positive number.")
-        return
+async def remindCmd(ctx,*, message: str):
+    print("=================================================")
+    print(message, type(message))
+    givenMessage = "".join(message)
     
-    new_reminder = {
-        'duration': duration,
-        'time_unit' : time_unit,
-        'txt': txt
-    }
-    print(new_reminder)
-    reminder.insert_one(new_reminder)
+    returnedList = list(remind(givenMessage))
+    print("time: ", returnedList[0], "string: ", returnedList[1])
+    duration = returnedList[0]
+    text = returnedList[1]
+    user = ctx.author.id
+    channelId = ctx.channel.id
+    # print("CHANNELID: ", channelId)
+    # print(user)
+    newReminder = {"userId": user,"channelId": channelId, "duration": duration, "text": text}
+    print(newReminder)
+    reminderCollection.insert_one(newReminder)
+    ctx.sent(f"{ctx.author.mention}, here's your reminder: {text}")
+    print(reminderCollection.count_documents({}), "done!")
     # ctx.send(reminder.count_documents({}), "done!")
 
 
