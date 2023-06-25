@@ -7,6 +7,7 @@ import os
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
 from remind import reminderTime
+
 # from checkReminders import checkReminders
 import asyncio
 import tracemalloc
@@ -24,30 +25,40 @@ command_prefix = "k!"
 guild_id = 607520631944118292
 guild = 607520631944118292
 
+owners = [418364415856082954, 413155474800902154]
+
 activity = discord.Activity(
     name="with your emotions 😘", type=discord.ActivityType.playing
 )
 
-bot = commands.Bot(command_prefix=command_prefix, activity=activity, intents=intents)
+bot = commands.Bot(
+    command_prefix=command_prefix,
+    owners_ids=set(owners),
+    activity=activity,
+    intents=intents,
+)
 
 # Create a new client and connect to the server
-client = MongoClient(URI, server_api=ServerApi('1'))
+client = MongoClient(URI, server_api=ServerApi("1"))
 # Send a ping to confirm a successful connection
 # @bot.command()
 # async def dbconnect(ctx):
 try:
-    client.admin.command('ping')
+    client.admin.command("ping")
     print("Pinged your deployment. You successfully connected to MongoDB!")
 except Exception as e:
     print(e)
-    
+
 db = client.get_database("kokospotbot_db")
-reminderCollection = db.reminder    #collection: reminder
+reminderCollection = db.reminder  # collection: reminder
+
 
 # Confirmation on bot login
 @bot.event
 async def on_ready():
     print("We have logged in as {0.user}".format(bot))
+    await startReminderLoop()
+
     try:
         # synced = await bot.tree.sync()
         bot.tree.copy_global_to(guild=guild)
@@ -59,28 +70,29 @@ async def on_ready():
         print(e)
 
 
-@bot.command()
-async def checkReminders(ctx):
+# @bot.command()
+async def checkReminders():
+    print("Checked reminders.")
     while True:
-        currentTime = datetime.datetime.now().timestamp()//1
+        currentTime = datetime.datetime.now().timestamp() // 1
 
         # Get reminders from the database collection that match the current time
         reminders = reminderCollection.find({"duration": {"$lte": currentTime}})
-        
+
         for reminder in reminders:
             duration = reminder["duration"]
             text = reminder["text"]
             userId = reminder["userId"]
             channel = reminder["channelId"]
-            # print("currenttime", currentTime)
-            # print("duration", duration)
-            # print(text)
+
             # Do something with the reminder, e.g., send a message to the member
             if duration == currentTime:
-                # print("duration inside if", duration, "& current time", currentTime)
-                await ctx.channel.send("Reminder added successfully")
+                await bot.get_channel(channel).send(
+                    f"<@{userId}>, here's your reminder: {text}"
+                )
                 reminderCollection.delete_one({"userID": userId})
-            else: pass
+
+            # elif duration < currentTime:
 
         # Remove the reminder from the collection after processing
 
@@ -89,6 +101,7 @@ async def checkReminders(ctx):
         # Wait for a specific duration before checking again (e.g., 1 second)
         await asyncio.sleep(1)
 
+
 # @bot.command()
 # async def remindPing(ctx):
 #     await ctx
@@ -96,11 +109,17 @@ async def startReminderLoop():
     while True:
         await checkReminders()
 
+
 @bot.command()
+@commands.is_owner()
 async def startRemindLoop(ctx):
-    loop = asyncio.get_running_loop()
-    loop.create_task(startReminderLoop())
+    # loop = asyncio.get_running_loop()
+    # loop.create_task(startReminderLoop())
+    # await bot.get_channel.send("Reminder loop started")
+    await startReminderLoop()
     await ctx.send("Reminder loop started")
+    print("startReminderLoop")
+
 
 @startRemindLoop.error
 async def info_error(ctx, error):
@@ -113,6 +132,7 @@ async def test(ctx, *, message):
     print(ctx)
     print(message)
     await ctx.send(message)
+
 
 # @bot.commands.command()
 # async def sync() -> None:
@@ -229,11 +249,11 @@ async def time(ctx):
 
 # reminder command
 @bot.command()
-async def remind(ctx,*, message: str):
+async def remind(ctx, *, message: str):
     print("=================================================")
     print(message, type(message))
     givenMessage = "".join(message)
-    
+
     returnedList = list(reminderTime(givenMessage))
     print("time: ", returnedList[0], "string: ", returnedList[1])
     duration = returnedList[0]
@@ -242,13 +262,18 @@ async def remind(ctx,*, message: str):
     channelId = ctx.channel.id
     # print("CHANNELID: ", channelId)
     # print(user)
-    newReminder = {"userId": user,"channelId": channelId, "duration": duration, "text": text}
+    newReminder = {
+        "userId": user,
+        "channelId": channelId,
+        "duration": duration,
+        "text": text,
+    }
     print(newReminder)
+    await ctx.channel.send("Reminder added successfully")
     reminderCollection.insert_one(newReminder)
-    await ctx.send(f"{ctx.author.mention}, here's your reminder: {text}")
+    # await ctx.send(f"{ctx.author.mention}, here's your reminder: {text}")
     print(reminderCollection.count_documents({}), "done!")
     # ctx.send(reminder.count_documents({}), "done!")
-
 
     # await ctx.send(
     #     f"Reminder set for {reminder_time} EDT. I will notify you in {duration} {time_unit}."
