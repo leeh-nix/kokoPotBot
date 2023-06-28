@@ -6,7 +6,8 @@ import dotenv
 import os
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
-from remind import reminderTime
+from extractReminderDetails import extractReminderDetails
+import logging
 
 # from checkReminders import checkReminders
 import asyncio
@@ -70,36 +71,48 @@ async def on_ready():
         print(e)
 
 
-# @bot.command()
+@bot.command(hidden=True)
+async def delReminders(ctx):
+    """Deletes all remidner with remindTime less than current time."""
+    currentTime = datetime.datetime.now().timestamp() // 1
+    try:
+        reminderCollection.delete_many({"remindTime": {"$lt": currentTime}})
+        await ctx.send("Deleted all completed reminders")
+        await ctx.send("Reminders Count: ", reminderCollection.count_documents({}))
+    except Exception as e:
+        logging.error(e)
+
+
 async def checkReminders():
     print("Checked reminders.")
     while True:
         currentTime = datetime.datetime.now().timestamp() // 1
 
         # Get reminders from the database collection that match the current time
-        reminders = reminderCollection.find({"duration": {"$lte": currentTime}})
+        reminders = reminderCollection.find({"remindTime": {"$lte": currentTime}})
 
         for reminder in reminders:
-            duration = reminder["duration"]
+            remindTime = reminder["remindTime"]
             text = reminder["text"]
             userId = reminder["userId"]
             channel = reminder["channelId"]
 
             # Do something with the reminder, e.g., send a message to the member
-            if duration == currentTime:
+            if remindTime == currentTime:
                 await bot.get_channel(channel).send(
                     f"<@{userId}>, here's your reminder: {text}"
                 )
                 reminderCollection.delete_one({"userID": userId})
 
-            # elif duration < currentTime:
+            # elif remindTime < currentTime:
 
         # Remove the reminder from the collection after processing
 
         # print("Checked reminders.")
 
-        # Wait for a specific duration before checking again (e.g., 1 second)
+        # Wait for a specific remindTime before checking again (e.g., 1 second)
         await asyncio.sleep(1)
+
 
 
 # @bot.command()
@@ -128,10 +141,35 @@ async def info_error(ctx, error):
 
 
 @bot.command()
+@commands.is_owner()
 async def test(ctx, *, message):
     print(ctx)
     print(message)
     await ctx.send(message)
+
+
+@bot.command()
+async def disconnect(ctx, member: discord.Member, *, message):
+    text = "".join(message)
+    # Check if the command is invoked in a guild
+    if ctx.guild is None:
+        await ctx.send("This command can only be used in a guild.")
+        return
+
+    # Check if the member is connected to a voice channel
+    if member.voice is None or member.voice.channel is None:
+        await ctx.send("Member is not connected to any voice channel.")
+        return
+
+    # Disconnect the member from the voice channel
+    await member.voice.channel.disconnect()
+    await ctx.send("Niklo\nKal ana")
+
+
+# @bot.command()
+# async def join(ctx, channel: discord.VoiceChannel):
+#     if ctx.voice_client is None:
+#         await ctx.author.move_to(channel)
 
 
 # @bot.commands.command()
@@ -220,6 +258,12 @@ async def info_error(ctx, error):
 @bot.hybrid_group(name="send", description="Sends a message to a specified channel.")
 # @is_in_guild(607520631944118292)
 async def send(ctx, channelId: int, *, message):
+    """Sends a message to specified channel
+
+    Args:
+        channelId (int): specify the channel ID
+        message (str): Message you want to send
+    """
     channel = bot.get_channel(channelId)
     if channel:
         await channel.send(message)
@@ -248,40 +292,50 @@ async def time(ctx):
 
 
 # reminder command
+async def createReminder(user, channelId, remindTime, text):
+    newReminder = {
+        "userId": user,
+        "channelId": channelId,
+        "remindTime": remindTime,
+        "text": text,
+    }
+    reminderCollection.insert_one(newReminder)
+
+
 @bot.command()
-async def remind(ctx, *, message: str):
+async def timer(ctx, *, message: str):
+    """Sets a reminder for the specified time.
+
+    Usage: m! remind <remindTime> <Reminder text>
+    eg. m!remind 1d 2h 3m 4s to touch grass
+    """
     print("=================================================")
     print(message, type(message))
     givenMessage = "".join(message)
 
-    returnedList = list(reminderTime(givenMessage))
-    print("time: ", returnedList[0], "string: ", returnedList[1])
-    duration = returnedList[0]
-    text = returnedList[1]
+    reminderDetails = extractReminderDetails(givenMessage)
+    logging.info(
+        f"givenTime: {reminderDetails['givenTime']} remindTime: {reminderDetails['remindTime']} string: {reminderDetails['text']}"
+    )
+    givenTime = reminderDetails["givenTime"]
+    print(reminderDetails["givenTime"])
+    print(reminderDetails["remindTime"])
+    print(reminderDetails["text"])
+    remindTime = int(reminderDetails["remindTime"])
+    text = reminderDetails["text"]
     user = ctx.author.id
     channelId = ctx.channel.id
-    # print("CHANNELID: ", channelId)
-    # print(user)
-    newReminder = {
-        "userId": user,
-        "channelId": channelId,
-        "duration": duration,
-        "text": text,
-    }
-    print(newReminder)
-    await ctx.channel.send("Reminder added successfully")
-    reminderCollection.insert_one(newReminder)
-    # await ctx.send(f"{ctx.author.mention}, here's your reminder: {text}")
-    print(reminderCollection.count_documents({}), "done!")
-    # ctx.send(reminder.count_documents({}), "done!")
-
-    # await ctx.send(
-    #     f"Reminder set for {reminder_time} EDT. I will notify you in {duration} {time_unit}."
-    # )
-
-    # delta = (reminder_time - current_time).total_seconds()
-    # await asyncio.sleep(delta)
-    # await ctx.send(f"{ctx.author.mention}, here's your reminder: {reminder}")
+    if givenTime == 0:
+        await ctx.send(
+            "Please enter a valid time or use k!help remind for help on this command."
+        )
+    else:
+        await createReminder(user, channelId, remindTime, text)
+        await ctx.channel.send("Reminder added successfully")
+        await ctx.send(
+            f"Reminder set for <t:{remindTime}:f>. I will notify you in <t:{remindTime}:R>."
+        )
+    print(f"{reminderCollection.count_documents({})} done!")
 
 
 @bot.command()
