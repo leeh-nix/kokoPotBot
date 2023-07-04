@@ -4,10 +4,13 @@ from discord.ext import commands
 from discord.ext.commands import check
 import dotenv
 import os
+# import typing
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
 from extractReminderDetails import extractReminderDetails
-import logging
+from konachanImgExtractor import konachanImgExtractor
+from utils import *
+# import logging
 
 # from checkReminders import checkReminders
 import asyncio
@@ -27,6 +30,7 @@ guild_id = 607520631944118292
 guild = 607520631944118292
 
 owners = [418364415856082954, 413155474800902154]
+channel_list = [457217966505852928, 1048553311768420363, 864370415076769813, 1124341821154267196]
 
 activity = discord.Activity(
     name="with your emotions 😘", type=discord.ActivityType.playing
@@ -69,18 +73,6 @@ async def on_ready():
         print(f"Synced {len(synced)} command(s)")
     except Exception as e:
         print(e)
-
-
-@bot.command(hidden=True)
-async def delReminders(ctx):
-    """Deletes all remidner with remindTime less than current time."""
-    currentTime = datetime.datetime.now().timestamp() // 1
-    try:
-        reminderCollection.delete_many({"remindTime": {"$lt": currentTime}})
-        await ctx.send("Deleted all completed reminders")
-        await ctx.send("Reminders Count: ", reminderCollection.count_documents({}))
-    except Exception as e:
-        logging.error(e)
 
 
 async def checkReminders():
@@ -148,22 +140,22 @@ async def test(ctx, *, message):
     await ctx.send(message)
 
 
-@bot.command()
-async def disconnect(ctx, member: discord.Member, *, message):
-    text = "".join(message)
-    # Check if the command is invoked in a guild
-    if ctx.guild is None:
-        await ctx.send("This command can only be used in a guild.")
-        return
+# @bot.command()
+# async def disconnect(ctx, member: discord.Member, *, message):
+#     text = "".join(message)
+#     # Check if the command is invoked in a guild
+#     if ctx.guild is None:
+#         await ctx.send("This command can only be used in a guild.")
+#         return
 
-    # Check if the member is connected to a voice channel
-    if member.voice is None or member.voice.channel is None:
-        await ctx.send("Member is not connected to any voice channel.")
-        return
+#     # Check if the member is connected to a voice channel
+#     if member.voice is None or member.voice.channel is None:
+#         await ctx.send("Member is not connected to any voice channel.")
+#         return
 
-    # Disconnect the member from the voice channel
-    await member.voice.channel.disconnect()
-    await ctx.send("Niklo\nKal ana")
+#     # Disconnect the member from the voice channel
+#     await member.voice.channel.disconnect()
+#     await ctx.send("Niklo\nKal ana")
 
 
 # @bot.command()
@@ -189,6 +181,18 @@ def is_in_guild(guild_id):
 
     return check(predicate)
 
+@bot.command(hidden=True)
+@is_in_guild(607520631944118292)
+async def delReminders(ctx):
+    """Deletes all remidner with remindTime less than current time."""
+    currentTime = datetime.datetime.now().timestamp() // 1
+    try:
+        reminderCollection.delete_many({"remindTime": {"$lt": currentTime}})
+        await ctx.send("Deleted all completed reminders")
+        await ctx.send("Reminders Count: ", reminderCollection.count_documents({}))
+    except Exception as e:
+        # logging.error(e)
+        print(e)
 
 # Commands start from here
 
@@ -202,36 +206,7 @@ def is_in_guild(guild_id):
 #     await bot.load_extension('utils')
 
 
-# @bot.hybrid_command()
-# @commands.guild_only()
-# @is_in_guild(607520631944118292)
-# async def evalu(ctx, *args):
-#     args = list(args)
-#     expr = ' '.join(str(i)for i in args[1:-1])
-#     try:
-#         print("cmd: ", expr)
-#         result = eval(expr)
-#         if asyncio.iscoroutine(result):
-#             result = await result
-#         await ctx.send(f"result: {result}")
-#     except Exception as e:
-#         print(e)
-#         await ctx.send(f"An error occurred: {e}")
-
-
 # @bot.add_command(command=command)
-
-
-# help
-@bot.command()
-async def helpme(ctx):
-    await ctx.channel.send(
-        """```
-k!ping || Pings the bot
-k!send <Channel/Channel ID> <Message you want to send> || Sends the message provided to the specified channel.
-k!time || Returns the current time
-k!remind <Duration in minutes> <Time unit> <Reminder text> || Sets a reminder for the specified time```"""
-    )
 
 
 # Slash command to check info of a user
@@ -305,38 +280,113 @@ async def createReminder(user, channelId, remindTime, text):
 @bot.command()
 async def timer(ctx, *, message: str):
     """Sets a reminder for the specified time.
-
-    Usage: m! remind <remindTime> <Reminder text>
-    eg. m!remind 1d 2h 3m 4s to touch grass
+    Usage: k! timer <Remind Time> <Reminder Text>
+    eg. k!timer 1d 2h 3m 4s to touch grass
     """
     print("=================================================")
     print(message, type(message))
     givenMessage = "".join(message)
 
     reminderDetails = extractReminderDetails(givenMessage)
-    logging.info(
-        f"givenTime: {reminderDetails['givenTime']} remindTime: {reminderDetails['remindTime']} string: {reminderDetails['text']}"
-    )
+    # logging.info(
+    print(f"givenTime: {reminderDetails['givenTime']} remindTime: {reminderDetails['remindTime']} string: {reminderDetails['text']}")
     givenTime = reminderDetails["givenTime"]
-    print(reminderDetails["givenTime"])
-    print(reminderDetails["remindTime"])
-    print(reminderDetails["text"])
+    # print(reminderDetails["givenTime"])
+    # print(reminderDetails["remindTime"])
+    # print(reminderDetails["text"])
     remindTime = int(reminderDetails["remindTime"])
     text = reminderDetails["text"]
     user = ctx.author.id
     channelId = ctx.channel.id
-    if givenTime == 0:
-        await ctx.send(
-            "Please enter a valid time or use k!help remind for help on this command."
-        )
-    else:
-        await createReminder(user, channelId, remindTime, text)
-        await ctx.channel.send("Reminder added successfully")
-        await ctx.send(
-            f"Reminder set for <t:{remindTime}:f>. I will notify you in <t:{remindTime}:R>."
-        )
+    try:
+        if givenTime == 0:
+            await ctx.send(
+                "Please enter a valid time or use k!help remind for help on this command."
+            )
+        else:
+            await createReminder(user, channelId, remindTime, text)
+            await ctx.channel.send("Reminder added successfully")
+            await ctx.send(
+                f"Reminder set for <t:{remindTime}:f>. I will notify you in <t:{remindTime}:R>."
+            )
+    except Exception as e:
+        # logging.error(f"An error occurred: {e}")
+        await ctx.send("An error occurred while setting the reminder. Please try again later.")
     print(f"{reminderCollection.count_documents({})} done!")
 
+@bot.command(hidden=True)
+@is_in_guild(607520631944118292)
+async def konachan(ctx, tags, pageno):
+    if (ctx.channel.id == 1124585323196862604):
+        data = konachanImgExtractor(tags, pageno)
+        for imgdata in data:
+            try:
+                await ctx.send(imgdata)
+                # asyncio.sleep(1)
+            except Exception as e:
+                print(e)
+    else: ctx.send("Error: You are not in the right channel.")
+
+
+@bot.command()
+async def encode(ctx, *, message):
+    message = "".join(message)
+    result = encoding(message)
+    await ctx.send(f"The encoded message: {result}")
+    
+@bot.command()
+async def decode(ctx, *, message):
+    message = "".join(message)
+    result = decoding(message)
+    await ctx.send(f"The decoded message: {result}")
+
+@bot.command()
+async def doublestruck(ctx, *, message):
+    message = "".join(message)
+    result = doublestruckAPI(message)
+    await ctx.send(f"{result}")
+
+
+@bot.command()
+async def clown(ctx, message):
+    url = f"{API_BASE_URL}/clown?image={message}"
+    if not message.startswith('http') or not message.endswith(('.jpg', '.jpeg', '.png', '.gif')):
+        await ctx.send("Please enter valid url.")
+        raise ValueError('Invalid image URL')
+    else: await ctx.send(url)
+
+@bot.command()
+async def advertise(ctx, message):
+    url = f"{API_BASE_URL}/ad?image={message}"
+
+    if not message.startswith('http') or not message.endswith(('.jpg', '.jpeg', '.png', '.gif')):
+        await ctx.send("Please enter valid url.")
+        raise ValueError('Invalid image URL')
+    else: await ctx.send(url)
+    
+@bot.command()
+async def uncover(ctx, message):
+    url = f"{API_BASE_URL}/uncover?image={message}"
+    if not message.startswith('http') or not message.endswith(('.jpg', '.jpeg', '.png', '.gif')):
+        await ctx.send("Please enter valid url.")
+        raise ValueError('Invalid image URL')
+    else: await ctx.send(url)
+
+@bot.command()
+async def invert(ctx, message):
+    url = f"{API_BASE_URL}/inverse?image={message}"
+    if not message.startswith('http') or not message.endswith(('.jpg', '.jpeg', '.png', '.gif')):
+        await ctx.send("Please enter valid url.")
+        raise ValueError('Invalid image URL')
+    else: await ctx.send(url)
+
+@bot.command()
+async def jail(ctx, message):
+    url = f"{API_BASE_URL}/jail?image={message}"
+    if not message.startswith('http') or not message.endswith(('.jpg', '.jpeg', '.png', '.gif')):
+        await ctx.send("Please enter valid url.")
+        raise ValueError('Invalid image URL')
+    else: await ctx.send(url)
 
 @bot.command()
 async def hello(message):

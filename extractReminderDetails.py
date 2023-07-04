@@ -1,7 +1,6 @@
 import logging
 import re
 import datetime
-import pytest
 
 pattern = re.compile(
     r"""
@@ -21,7 +20,7 @@ def extractReminderDetails(message: str):
     # print(f"text: {text}")
     print(f"message: {message}")
     matchFound = pattern.search(message)
-    print("matchFound: ", matchFound)
+    # print("matchFound: ", matchFound)
 
     currentTime = datetime.datetime.now().timestamp() // 1
     print("current time: ", currentTime)
@@ -32,7 +31,7 @@ def extractReminderDetails(message: str):
     seconds = int(matchFound.group("seconds")) if matchFound.group("seconds") else 0
     text = matchFound.group("msg") if matchFound.group("msg") else ""
     # text = matchFound.group("text")
-    print("grp", days, hours, minutes, seconds, "text", text)
+    # print("grp", days, hours, minutes, seconds, "text", text)
 
     givenTime = (days * 86400) + (hours * 3600) + (minutes * 60) + seconds
 
@@ -46,6 +45,7 @@ def extractReminderDetails(message: str):
     print(f"givenTime: {givenTime}")
     remindTime = currentTime + givenTime
     print(f"remind time: {remindTime}")
+    print(f"text: {text}")
     return {"givenTime": givenTime, "remindTime": remindTime, "text": text}
 
 
