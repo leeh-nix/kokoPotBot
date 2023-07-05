@@ -5,6 +5,7 @@ from discord.ext.commands import check
 import dotenv
 import os
 # import typing
+from typing import Literal, Optional
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
 from extractReminderDetails import extractReminderDetails
@@ -66,7 +67,7 @@ async def on_ready():
 
     try:
         # synced = await bot.tree.sync()
-        bot.tree.copy_global_to(guild=guild)
+        # bot.tree.copy_global_to(guild=guild)
         synced = await bot.tree.sync(guild=guild)
         # synced = await bot.tree.sync(guild=discord.Object(...))
         # synced = await Bot.copy_global_to(*, 607520631944118292)
@@ -215,7 +216,6 @@ async def delReminders(ctx):
 async def tag(message, member: discord.Member):
     """
     Displays the info of the user: the joining date and their current avatar
-
     Usage: /tag enter <@user>
     """
     await message.send(
@@ -234,12 +234,11 @@ async def info_error(ctx, error):
 # @is_in_guild(607520631944118292)
 async def send(ctx, channelId: int, *, message):
     """Sends a message to specified channel
-
     Args:
         channelId (int): specify the channel ID
         message (str): Message you want to send
     """
-    channel = bot.get_channel(channelId)
+    channel = channelId
     if channel:
         await channel.send(message)
         await ctx.send("Message sent successfully.")
@@ -327,7 +326,6 @@ async def konachan(ctx, tags, pageno):
                 print(e)
     else: ctx.send("Error: You are not in the right channel.")
 
-
 @bot.command()
 async def encode(ctx, *, message):
     message = "".join(message)
@@ -348,45 +346,63 @@ async def doublestruck(ctx, *, message):
 
 
 @bot.command()
-async def clown(ctx, message):
-    url = f"{API_BASE_URL}/clown?image={message}"
+async def clown(ctx, message, *args):
+    # url = f"{API_BASE_URL}/clown?image={message}"
     if not message.startswith('http') or not message.endswith(('.jpg', '.jpeg', '.png', '.gif')):
         await ctx.send("Please enter valid url.")
         raise ValueError('Invalid image URL')
-    else: await ctx.send(url)
+    else: 
+        result = await clownApiRequest(message)
+    with open('clown_image.png', 'wb') as file:
+        file.write(result)
+
+    with open('clown_image.png', 'rb') as file:
+        await ctx.send(file=discord.File(file, 'clown_image.png'))
 
 @bot.command()
 async def advertise(ctx, message):
-    url = f"{API_BASE_URL}/ad?image={message}"
+    # url = f"{API_BASE_URL}/ad?image={message}"
 
     if not message.startswith('http') or not message.endswith(('.jpg', '.jpeg', '.png', '.gif')):
         await ctx.send("Please enter valid url.")
         raise ValueError('Invalid image URL')
-    else: await ctx.send(url)
+    else: 
+        result = await adApiRequest(message)
+    with open('advertise_image.png', 'wb') as file:
+        file.write(result)
+
+    with open('advertise_image.png', 'rb') as file:
+        await ctx.send(file=discord.File(file, 'advertise_image.png'))
     
 @bot.command()
 async def uncover(ctx, message):
-    url = f"{API_BASE_URL}/uncover?image={message}"
+    # url = f"{API_BASE_URL}/uncover?image={message}"
     if not message.startswith('http') or not message.endswith(('.jpg', '.jpeg', '.png', '.gif')):
         await ctx.send("Please enter valid url.")
         raise ValueError('Invalid image URL')
-    else: await ctx.send(url)
+    else: 
+        result = await uncoverApiRequest(message)
+    with open('uncover_image.png', 'wb') as file:
+        file.write(result)
 
-@bot.command()
-async def invert(ctx, message):
-    url = f"{API_BASE_URL}/inverse?image={message}"
-    if not message.startswith('http') or not message.endswith(('.jpg', '.jpeg', '.png', '.gif')):
-        await ctx.send("Please enter valid url.")
-        raise ValueError('Invalid image URL')
-    else: await ctx.send(url)
+    with open('uncover_image.png', 'rb') as file:
+        await ctx.send(file=discord.File(file, 'uncover_image.png'))
+
 
 @bot.command()
 async def jail(ctx, message):
-    url = f"{API_BASE_URL}/jail?image={message}"
+    # url = f"{API_BASE_URL}/jail?image={message}"
     if not message.startswith('http') or not message.endswith(('.jpg', '.jpeg', '.png', '.gif')):
         await ctx.send("Please enter valid url.")
         raise ValueError('Invalid image URL')
-    else: await ctx.send(url)
+    else: 
+        result = await jailApiRequest(message)
+    with open('jail_image.png', 'wb') as file:
+        file.write(result)
+
+    with open('jail_image.png', 'rb') as file:
+        await ctx.send(file=discord.File(file, 'jail_image.png'))
+
 
 @bot.command()
 async def hello(message):
