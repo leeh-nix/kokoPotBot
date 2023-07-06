@@ -31,7 +31,6 @@ intents = discord.Intents.default()
 intents.message_content = True
 command_prefix = "k!"
 guild_id = 607520631944118292
-owners = [418364415856082954]
 
 owners = [418364415856082954, 413155474800902154]
 channel_list = [457217966505852928, 1048553311768420363, 864370415076769813, 1124341821154267196]
@@ -73,6 +72,7 @@ async def is_owner(ctx):
         return True
 
 @bot.command()
+@commands.check(is_owner)
 async def addOwner(ctx, member: discord.Member):
     owners.append(member.id)
     await ctx.send(f"Added {member} to the owners list")
@@ -437,7 +437,7 @@ async def jail(ctx, message):
 
 
 @bot.hybrid_command()
-async def imageresize(ctx, message, height: Optional[int] = None, width: Optional[int] = None, aspect_ratio: Optional[str] = None):
+async def imageresize(ctx, message, format, height: Optional[int] = None, width: Optional[int] = None, aspect_ratio: Optional[str] = None):
     if height is None and width is None and aspect_ratio is None: 
         return await ctx.send("Please enter at least two values to resize your image.")
     else:
@@ -445,8 +445,10 @@ async def imageresize(ctx, message, height: Optional[int] = None, width: Optiona
 
     image_file = io.BytesIO(result)
     image_file.seek(0)
-
-    await ctx.send(file=discord.File(image_file, 'image.png'))
+    if format =="gif":
+        await ctx.send(file=discord.File(image_file, 'image.gif'))
+    else:
+        await ctx.send(file=discord.File(image_file, 'image.png'))
 
 
 @bot.command()
@@ -462,7 +464,7 @@ async def hello(message):
 
 @bot.hybrid_command()
 async def ping(message):
-    await message.send(f"Let's go Baby! ```{bot.latency * 1000} ms```")
+    await message.send(f"Let's go Baby! ```{(bot.latency * 1000)//1} ms```")
 
 
 @bot.command()
