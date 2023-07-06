@@ -1,4 +1,5 @@
 import datetime
+import io
 import discord
 from discord.ext import commands
 from discord.ext.commands import check
@@ -9,6 +10,7 @@ from typing import Literal, Optional
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
 from extractReminderDetails import extractReminderDetails
+from image import imagetransform
 from konachanImgExtractor import konachanImgExtractor
 from utils import *
 # import logging
@@ -22,13 +24,14 @@ tracemalloc.start()
 dotenv.load_dotenv()
 TOKEN = os.getenv("TOKEN")
 URI = os.getenv("URI")
+URL_ENDPOINT = os.getenv("URL_ENDPOINT")
 
 
 intents = discord.Intents.default()
 intents.message_content = True
 command_prefix = "k!"
 guild_id = 607520631944118292
-guild = 607520631944118292
+owners = [418364415856082954]
 
 owners = [418364415856082954, 413155474800902154]
 channel_list = [457217966505852928, 1048553311768420363, 864370415076769813, 1124341821154267196]
@@ -66,14 +69,23 @@ async def on_ready():
     await startReminderLoop()
 
     try:
-        # synced = await bot.tree.sync()
+        synced = await bot.tree.sync()
         # bot.tree.copy_global_to(guild=guild)
-        synced = await bot.tree.sync(guild=guild)
+        # synced = await bot.tree.sync(guild=guild)
         # synced = await bot.tree.sync(guild=discord.Object(...))
         # synced = await Bot.copy_global_to(*, 607520631944118292)
         print(f"Synced {len(synced)} command(s)")
     except Exception as e:
         print(e)
+        
+async def is_owner(ctx):
+    if ctx.author.id in owners:
+        return True
+
+@bot.command()
+async def addOwner(ctx, member: discord.Member):
+    owners.append(member.id)
+    await ctx.send(f"Added {member} to the owners list")
 
 
 async def checkReminders():
@@ -230,7 +242,7 @@ async def info_error(ctx, error):
 
 
 # @commands.is_owner()
-@bot.hybrid_group(name="send", description="Sends a message to a specified channel.")
+@bot.hybrid_group(fallback="send", description="Sends a message to a specified channel.")
 # @is_in_guild(607520631944118292)
 async def send(ctx, channelId: int, *, message):
     """Sends a message to specified channel
@@ -404,6 +416,25 @@ async def jail(ctx, message):
         await ctx.send(file=discord.File(file, 'jail_image.png'))
 
 
+@bot.hybrid_command()
+async def imageresize(ctx, message, height: Optional[int] = None, width: Optional[int] = None, aspect_ratio: Optional[str] = None):
+    if height is None and width is None and aspect_ratio is None: 
+        return await ctx.send("Please enter at least two values to resize your image.")
+    else:
+        result = imagetransform(message, height, width, aspect_ratio)
+
+    image_file = io.BytesIO(result)
+    image_file.seek(0)
+
+    await ctx.send(file=discord.File(image_file, 'image.png'))
+
+
+@bot.command()
+@commands.check(is_owner)
+async def purge(ctx, amount: int):
+    deleted = await ctx.channel.purge(limit=amount)
+    await ctx.channel.send(f'Deleted {len(deleted)} message(s)', delete_after=3)
+    
 @bot.command()
 async def hello(message):
     await message.channel.send("Hello!")
