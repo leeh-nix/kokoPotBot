@@ -67,16 +67,6 @@ reminderCollection = db.reminder  # collection: reminder
 async def on_ready():
     print("We have logged in as {0.user}".format(bot))
     await startReminderLoop()
-
-    try:
-        synced = await bot.tree.sync()
-        # bot.tree.copy_global_to(guild=guild)
-        # synced = await bot.tree.sync(guild=guild)
-        # synced = await bot.tree.sync(guild=discord.Object(...))
-        # synced = await Bot.copy_global_to(*, 607520631944118292)
-        print(f"Synced {len(synced)} command(s)")
-    except Exception as e:
-        print(e)
         
 async def is_owner(ctx):
     if ctx.author.id in owners:
@@ -86,7 +76,38 @@ async def is_owner(ctx):
 async def addOwner(ctx, member: discord.Member):
     owners.append(member.id)
     await ctx.send(f"Added {member} to the owners list")
+    
+@bot.command()
+@commands.check(is_owner)
+async def sync(ctx: commands.Context, guilds: commands.Greedy[discord.Object], spec: Optional[Literal["~", "*", "^"]] = None) -> None:
+    if not guilds:
+        if spec == "~":
+            synced = await ctx.bot.tree.sync(guild=ctx.guild)
+        elif spec == "*":
+            ctx.bot.tree.copy_global_to(guild=ctx.guild)
+            synced = await ctx.bot.tree.sync(guild=ctx.guild)
+        elif spec == "^":
+            ctx.bot.tree.clear_commands(guild=ctx.guild)
+            await ctx.bot.tree.sync(guild=ctx.guild)
+            synced = []
+        else:
+            synced = await ctx.bot.tree.sync()
 
+        await ctx.send(
+            f"Synced {len(synced)} commands {'globally' if spec is None else 'to the current guild.'}"
+        )
+        return
+
+    ret = 0
+    for guild in guilds:
+        try:
+            await ctx.bot.tree.sync(guild=guild)
+        except discord.HTTPException:
+            pass
+        else:
+            ret += 1
+
+    await ctx.send(f"Synced the tree to {ret}/{len(guilds)}.")
 
 async def checkReminders():
     print("Checked reminders.")
@@ -242,26 +263,25 @@ async def info_error(ctx, error):
 
 
 # @commands.is_owner()
-@bot.hybrid_group(fallback="send", description="Sends a message to a specified channel.")
+# @bot.hybrid_group(fallback="send", description="Sends a message to a specified channel.")
 # @is_in_guild(607520631944118292)
-async def send(ctx, channelId: int, *, message):
-    """Sends a message to specified channel
-    Args:
-        channelId (int): specify the channel ID
-        message (str): Message you want to send
-    """
-    channel = channelId
-    if channel:
-        await channel.send(message)
-        await ctx.send("Message sent successfully.")
-    else:
-        await ctx.send("Invalid channel ID.")
+# async def send(ctx, channelId: int, *, message):
+#     """Sends a message to specified channel
+#     Args:
+#         channelId (int): specify the channel ID
+#         message (str): Message you want to send
+#     """
+#     channel = channelId
+#     if channel:
+#         await channel.send(message)
+#         await ctx.send("Message sent successfully.")
+#     else:
+#         await ctx.send("Invalid channel ID.")
 
 
-@send.error
-async def info_error(ctx, error):
-    if isinstance(error, commands.BadArgument):
-        await ctx.send("Please enter the correct channel...")
+# @send.error
+# async def info_error(ctx, error):
+    # if isinstance(error, commands.BadArgument):ft channel...")
 
 
 # @bot.command()
