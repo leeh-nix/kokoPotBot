@@ -5,6 +5,7 @@ from discord.ext import commands
 from discord.ext.commands import check
 import dotenv
 import os
+
 # import typing
 from typing import Literal, Optional
 from pymongo.mongo_client import MongoClient
@@ -13,6 +14,7 @@ from extractReminderDetails import extractReminderDetails
 from image import imagetransform
 from konachanImgExtractor import konachanImgExtractor
 from utils import *
+
 # import logging
 
 # from checkReminders import checkReminders
@@ -33,7 +35,12 @@ command_prefix = "k!"
 guild_id = 607520631944118292
 
 owners = [418364415856082954, 413155474800902154]
-channel_list = [457217966505852928, 1048553311768420363, 864370415076769813, 1124341821154267196]
+channel_list = [
+    457217966505852928,
+    1048553311768420363,
+    864370415076769813,
+    1124341821154267196,
+]
 
 activity = discord.Activity(
     name="with your emotions 😘", type=discord.ActivityType.playing
@@ -66,20 +73,27 @@ reminderCollection = db.reminder  # collection: reminder
 async def on_ready():
     print("We have logged in as {0.user}".format(bot))
     await startReminderLoop()
-        
+
+
 async def is_owner(ctx):
     if ctx.author.id in owners:
         return True
+
 
 @bot.command()
 @commands.check(is_owner)
 async def addOwner(ctx, member: discord.Member):
     owners.append(member.id)
     await ctx.send(f"Added {member} to the owners list")
-    
-@bot.command()
+
+
+@bot.command(hidden=True)
 @commands.check(is_owner)
-async def sync(ctx: commands.Context, guilds: commands.Greedy[discord.Object], spec: Optional[Literal["~", "*", "^"]] = None) -> None:
+async def sync(
+    ctx: commands.Context,
+    guilds: commands.Greedy[discord.Object],
+    spec: Optional[Literal["~", "*", "^"]] = None,
+) -> None:
     if not guilds:
         if spec == "~":
             synced = await ctx.bot.tree.sync(guild=ctx.guild)
@@ -108,6 +122,7 @@ async def sync(ctx: commands.Context, guilds: commands.Greedy[discord.Object], s
             ret += 1
 
     await ctx.send(f"Synced the tree to {ret}/{len(guilds)}.")
+
 
 async def checkReminders():
     print("Checked reminders.")
@@ -140,7 +155,6 @@ async def checkReminders():
         await asyncio.sleep(1)
 
 
-
 # @bot.command()
 # async def remindPing(ctx):
 #     await ctx
@@ -150,7 +164,7 @@ async def startReminderLoop():
 
 
 @bot.command()
-@commands.is_owner()
+@commands.check(is_owner)
 async def startRemindLoop(ctx):
     # loop = asyncio.get_running_loop()
     # loop.create_task(startReminderLoop())
@@ -166,8 +180,8 @@ async def info_error(ctx, error):
         await ctx.send("Error starting reminder loop")
 
 
-@bot.command()
-@commands.is_owner()
+@bot.command(hidden=True)
+@commands.check(is_owner)
 async def test(ctx, *, message):
     print(ctx)
     print(message)
@@ -215,6 +229,7 @@ def is_in_guild(guild_id):
 
     return check(predicate)
 
+
 @bot.command(hidden=True)
 @is_in_guild(607520631944118292)
 async def delReminders(ctx):
@@ -228,19 +243,9 @@ async def delReminders(ctx):
         # logging.error(e)
         print(e)
 
+
 # Commands start from here
-
-# TODO: check bot.load_extension() and reload_extension()
 # TODO: check .uptime or some method for calculating the uptime of the bot
-
-# @bot.command()
-# async def loadextension(ctx):
-#     await ctx.send("Loading utils extension")
-#     print("Loading utils extension")
-#     await bot.load_extension('utils')
-
-
-# @bot.add_command(command=command)
 
 
 # Slash command to check info of a user
@@ -262,26 +267,25 @@ async def info_error(ctx, error):
         await ctx.send("I could not find that member...")
 
 
-# @commands.is_owner()
-# @bot.hybrid_group(fallback="send", description="Sends a message to a specified channel.")
-# @is_in_guild(607520631944118292)
-# async def send(ctx, channelId: int, *, message):
-#     """Sends a message to specified channel
-#     Args:
-#         channelId (int): specify the channel ID
-#         message (str): Message you want to send
-#     """
-#     channel = channelId
-#     if channel:
-#         await channel.send(message)
-#         await ctx.send("Message sent successfully.")
-#     else:
-#         await ctx.send("Invalid channel ID.")
+@bot.hybrid_command()
+@commands.check(is_owner)
+async def send(ctx, channel: discord.TextChannel, message):
+    """Sends a message to specified channel
+    Args:
+        channelId (int): specify the channel ID
+        message (str): Message you want to send
+    """
+    channel = channel
+    if channel:
+        await channel.send(message)
+        await ctx.send("Message sent successfully.")
+    else:
+        await ctx.send("Invalid channel ID.")
 
 
-# @send.error
-# async def info_error(ctx, error):
-    # if isinstance(error, commands.BadArgument):ft channel...")
+@send.error
+async def info_error(ctx, error):
+    print(error)
 
 
 # @bot.command()
@@ -320,7 +324,9 @@ async def timer(ctx, *, message: str):
 
     reminderDetails = extractReminderDetails(givenMessage)
     # logging.info(
-    print(f"givenTime: {reminderDetails['givenTime']} remindTime: {reminderDetails['remindTime']} string: {reminderDetails['text']}")
+    print(
+        f"givenTime: {reminderDetails['givenTime']} remindTime: {reminderDetails['remindTime']} string: {reminderDetails['text']}"
+    )
     givenTime = reminderDetails["givenTime"]
     # print(reminderDetails["givenTime"])
     # print(reminderDetails["remindTime"])
@@ -342,13 +348,17 @@ async def timer(ctx, *, message: str):
             )
     except Exception as e:
         # logging.error(f"An error occurred: {e}")
-        await ctx.send("An error occurred while setting the reminder. Please try again later.")
+        await ctx.send(
+            "An error occurred while setting the reminder. Please try again later."
+        )
     print(f"{reminderCollection.count_documents({})} done!")
 
+
 @bot.command(hidden=True)
+@commands.check(is_owner)
 @is_in_guild(607520631944118292)
 async def konachan(ctx, tags, pageno):
-    if (ctx.channel.id == 1124585323196862604):
+    if ctx.channel.id == 1124585323196862604:
         data = konachanImgExtractor(tags, pageno)
         for imgdata in data:
             try:
@@ -356,19 +366,23 @@ async def konachan(ctx, tags, pageno):
                 # asyncio.sleep(1)
             except Exception as e:
                 print(e)
-    else: ctx.send("Error: You are not in the right channel.")
+    else:
+        ctx.send("Error: You are not in the right channel.")
+
 
 @bot.command()
 async def encode(ctx, *, message):
     message = "".join(message)
     result = encoding(message)
     await ctx.send(f"The encoded message: {result}")
-    
+
+
 @bot.command()
 async def decode(ctx, *, message):
     message = "".join(message)
     result = decoding(message)
     await ctx.send(f"The decoded message: {result}")
+
 
 @bot.command()
 async def doublestruck(ctx, *, message):
@@ -380,83 +394,118 @@ async def doublestruck(ctx, *, message):
 @bot.command()
 async def clown(ctx, message, *args):
     # url = f"{API_BASE_URL}/clown?image={message}"
-    if not message.startswith('http') or not message.endswith(('.jpg', '.jpeg', '.png', '.gif')):
+    if not message.startswith("http") or not message.endswith(
+        (".jpg", ".jpeg", ".png", ".gif")
+    ):
         await ctx.send("Please enter valid url.")
-        raise ValueError('Invalid image URL')
-    else: 
+        raise ValueError("Invalid image URL")
+    else:
         result = await clownApiRequest(message)
-    with open('clown_image.png', 'wb') as file:
+    with open("clown_image.png", "wb") as file:
         file.write(result)
 
-    with open('clown_image.png', 'rb') as file:
-        await ctx.send(file=discord.File(file, 'clown_image.png'))
+    with open("clown_image.png", "rb") as file:
+        await ctx.send(file=discord.File(file, "clown_image.png"))
+
 
 @bot.command()
 async def advertise(ctx, message):
     # url = f"{API_BASE_URL}/ad?image={message}"
 
-    if not message.startswith('http') or not message.endswith(('.jpg', '.jpeg', '.png', '.gif')):
+    if not message.startswith("http") or not message.endswith(
+        (".jpg", ".jpeg", ".png", ".gif")
+    ):
         await ctx.send("Please enter valid url.")
-        raise ValueError('Invalid image URL')
-    else: 
+        raise ValueError("Invalid image URL")
+    else:
         result = await adApiRequest(message)
-    with open('advertise_image.png', 'wb') as file:
+    with open("advertise_image.png", "wb") as file:
         file.write(result)
 
-    with open('advertise_image.png', 'rb') as file:
-        await ctx.send(file=discord.File(file, 'advertise_image.png'))
-    
+    with open("advertise_image.png", "rb") as file:
+        await ctx.send(file=discord.File(file, "advertise_image.png"))
+
+
 @bot.command()
 async def uncover(ctx, message):
     # url = f"{API_BASE_URL}/uncover?image={message}"
-    if not message.startswith('http') or not message.endswith(('.jpg', '.jpeg', '.png', '.gif')):
+    if not message.startswith("http") or not message.endswith(
+        (".jpg", ".jpeg", ".png", ".gif")
+    ):
         await ctx.send("Please enter valid url.")
-        raise ValueError('Invalid image URL')
-    else: 
+        raise ValueError("Invalid image URL")
+    else:
         result = await uncoverApiRequest(message)
-    with open('uncover_image.png', 'wb') as file:
+    with open("uncover_image.png", "wb") as file:
         file.write(result)
 
-    with open('uncover_image.png', 'rb') as file:
-        await ctx.send(file=discord.File(file, 'uncover_image.png'))
+    with open("uncover_image.png", "rb") as file:
+        await ctx.send(file=discord.File(file, "uncover_image.png"))
 
 
 @bot.command()
 async def jail(ctx, message):
     # url = f"{API_BASE_URL}/jail?image={message}"
-    if not message.startswith('http') or not message.endswith(('.jpg', '.jpeg', '.png', '.gif')):
+    if not message.startswith("http") or not message.endswith(
+        (".jpg", ".jpeg", ".png", ".gif")
+    ):
         await ctx.send("Please enter valid url.")
-        raise ValueError('Invalid image URL')
-    else: 
+        raise ValueError("Invalid image URL")
+    else:
         result = await jailApiRequest(message)
-    with open('jail_image.png', 'wb') as file:
+    with open("jail_image.png", "wb") as file:
         file.write(result)
 
-    with open('jail_image.png', 'rb') as file:
-        await ctx.send(file=discord.File(file, 'jail_image.png'))
+    with open("jail_image.png", "rb") as file:
+        await ctx.send(file=discord.File(file, "jail_image.png"))
 
 
 @bot.hybrid_command()
-async def imageresize(ctx, message, format, height: Optional[int] = None, width: Optional[int] = None, aspect_ratio: Optional[str] = None):
-    if height is None and width is None and aspect_ratio is None: 
+async def imageresize(
+    ctx,
+    message,
+    format: Literal["gif", "png, jpeg, jpg etc"],
+    height: Optional[int] = None,
+    width: Optional[int] = None,
+    aspect_ratio: Optional[Literal["1-1", "4-3", "3-4"]] = None,
+):
+    """Resizes the image provided in the message box, the link must be ending with png, jpeg, jpg , gif etc
+
+    Args:
+        ctx (_type_): _description_
+        message (_type_): Enter the link of your image
+        format (Literal[&quot;gif&quot;, &quot;png, jpeg, jpg etc&quot;]): png, jpeg, jpg, gif etc
+        height (Optional[int], optional): provide height
+        width (Optional[int], optional): provide width
+        aspect_ratio (Optional[str], optional): Enter the aspect ratio (eg. 4-3 for 4:3)
+    """
+    if (height is None and width is None and aspect_ratio is None) or (
+        (height is None or width is None) and aspect_ratio is not None
+    ):
         return await ctx.send("Please enter at least two values to resize your image.")
     else:
         result = imagetransform(message, height, width, aspect_ratio)
+    with io.BytesIO(result) as image_file:
+        image_file.seek(0)
+        if format == "gif":
+            await ctx.send(file=discord.File(image_file, "image.gif"))
+        else:
+            await ctx.send(file=discord.File(image_file, "image.png"))
 
-    image_file = io.BytesIO(result)
-    image_file.seek(0)
-    if format =="gif":
-        await ctx.send(file=discord.File(image_file, 'image.gif'))
-    else:
-        await ctx.send(file=discord.File(image_file, 'image.png'))
+
+# TODO:add autocomplete for format and aspect ratio
+@imageresize.error()
+async def imageresize_error(ctx, error):
+    print(error)
 
 
-@bot.command()
+@bot.command(hidden=True)
 @commands.check(is_owner)
 async def purge(ctx, amount: int):
     deleted = await ctx.channel.purge(limit=amount)
-    await ctx.channel.send(f'Deleted {len(deleted)} message(s)', delete_after=3)
-    
+    await ctx.channel.send(f"Deleted {len(deleted)} message(s)", delete_after=3)
+
+
 @bot.command()
 async def hello(message):
     await message.channel.send("Hello!")
@@ -484,6 +533,7 @@ async def thanks(message):
 
 #     if message.content.startswith('hello'):
 #         await message.channel.send("Hellooo  how are you")
+
 
 # ============================================================================================================================
 try:
