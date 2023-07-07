@@ -285,7 +285,8 @@ async def send(ctx, channel: discord.TextChannel, message):
 
 @send.error
 async def info_error(ctx, error):
-    print(error)
+    if isinstance(error, commands.BadArgument):
+        await ctx.send("Something went wrong...")
 
 
 # @bot.command()
@@ -493,11 +494,10 @@ async def imageresize(
             await ctx.send(file=discord.File(image_file, "image.png"))
 
 
-# TODO:add autocomplete for format and aspect ratio
 @imageresize.error()
 async def imageresize_error(ctx, error):
-    print(error)
-
+    if isinstance(error, commands.BadArgument):
+        await ctx.send("Error starting reminder loop")
 
 @bot.command(hidden=True)
 @commands.check(is_owner)
