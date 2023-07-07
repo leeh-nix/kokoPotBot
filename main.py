@@ -283,12 +283,6 @@ async def send(ctx, channel: discord.TextChannel, message):
         await ctx.send("Invalid channel ID.")
 
 
-@send.error
-async def info_error(ctx, error):
-    if isinstance(error, commands.BadArgument):
-        await ctx.send("Something went wrong...")
-
-
 # @bot.command()
 # async def emoji(message, *lst):
 #     lst = list(lst)
@@ -492,12 +486,6 @@ async def imageresize(
             await ctx.send(file=discord.File(image_file, "image.gif"))
         else:
             await ctx.send(file=discord.File(image_file, "image.png"))
-
-
-@imageresize.error()
-async def imageresize_error(ctx, error):
-    if isinstance(error, TypeError):
-        await ctx.send("Something went wrong...")
 
 @bot.command(hidden=True)
 @commands.check(is_owner)
