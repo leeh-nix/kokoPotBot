@@ -496,8 +496,8 @@ async def imageresize(
 
 @imageresize.error()
 async def imageresize_error(ctx, error):
-    if isinstance(error, commands.BadArgument):
-        await ctx.send("Error starting reminder loop")
+    if isinstance(error, TypeError):
+        await ctx.send("Something went wrong...")
 
 @bot.command(hidden=True)
 @commands.check(is_owner)
