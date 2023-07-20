@@ -293,9 +293,10 @@ async def send(ctx, channel: discord.TextChannel, message):
 
 @bot.command()
 @commands.check(is_owner)
-async def add(ctx, message):
+async def add(ctx, *, message):
+    message = "".join(message)
     watchlist.append(message)
-    await ctx.send(f"added: {message} to the watchlist")
+    await ctx.send(f"added: `{message}` to the watchlist")
 
 @bot.command()
 @commands.check(is_owner)
