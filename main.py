@@ -67,6 +67,8 @@ except Exception as e:
 db = client.get_database("kokospotbot_db")
 reminderCollection = db.reminder  # collection: reminder
 
+# list
+watchlist = []
 
 # Confirmation on bot login
 @bot.event
@@ -289,6 +291,17 @@ async def send(ctx, channel: discord.TextChannel, message):
 #     await message.channel.send(emojify(lst))
 
 
+@bot.command()
+@commands.check(is_owner)
+async def add(ctx, message):
+    watchlist.append(message)
+    await ctx.send(f"added: {message} to the watchlist")
+
+@bot.command()
+@commands.check(is_owner)
+async def display(ctx):
+    await ctx.send(watchlist)
+    
 # current time
 @bot.command()
 async def time(ctx):
