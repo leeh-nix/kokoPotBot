@@ -27,12 +27,13 @@ URI = os.getenv("URI")
 URL_ENDPOINT = os.getenv("URL_ENDPOINT")
 
 
-intents = discord.Intents.default()
+intents = discord.Intents.all()
 intents.message_content = True
 command_prefix = "k!"
 guild_id = 607520631944118292
 
-owners = [418364415856082954, 413155474800902154]
+owners = [418364415856082954, 757478713402064996, 413155474800902154, 840584597472936006]
+
 channel_list = [
     457217966505852928,
     1048553311768420363,
@@ -495,13 +496,18 @@ async def thanks(message):
 
 burrman = 758978243842801669
 isallowed = False
-@bot.command()
+@bot.command(hidden=True)
 @commands.check(is_owner)
 async def toggleburrman(ctx):
     global isallowed
     isallowed = not isallowed
     await ctx.send(isallowed)
 
+@bot.command(hidden=True)
+@commands.check(is_owner)
+async def currentstatus(ctx):
+    global isallowed
+    await ctx.send(isallowed)
 
 @bot.event
 async def on_voice_state_update(member):
