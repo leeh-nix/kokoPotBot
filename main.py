@@ -31,8 +31,7 @@ intents = discord.Intents.all()
 intents.message_content = True
 command_prefix = "k!"
 guild_id = 607520631944118292
-
-owners = [418364415856082954, 757478713402064996, 413155474800902154, 840584597472936006]
+owners = [418364415856082954, 757478713402064996, 413155474800902154, 840584597472936006, 1132574358909493248]
 
 channel_list = [
     457217966505852928,
@@ -510,7 +509,7 @@ async def currentstatus(ctx):
     await ctx.send(isallowed)
 
 @bot.event
-async def on_voice_state_update(member):
+async def on_voice_state_update(member, before, after):
     if member.is_on_mobile() and member.id == burrman and not isallowed:
         await member.move_to(None)
         print(f'{member} was disconnected from the voice channel on mobile.')
