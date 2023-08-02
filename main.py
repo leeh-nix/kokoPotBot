@@ -54,8 +54,6 @@ bot = commands.Bot(
 # Create a new client and connect to the server
 client = MongoClient(URI, server_api=ServerApi("1"))
 # Send a ping to confirm a successful connection
-# @bot.command()
-# async def dbconnect(ctx):
 try:
     client.admin.command("ping")
     print("Pinged your deployment. You successfully connected to MongoDB!")
@@ -166,9 +164,6 @@ async def startReminderLoop():
 @bot.command()
 @commands.check(is_owner)
 async def startRemindLoop(ctx):
-    # loop = asyncio.get_running_loop()
-    # loop.create_task(startReminderLoop())
-    # await bot.get_channel.send("Reminder loop started")
     await startReminderLoop()
     await ctx.send("Reminder loop started")
     print("startReminderLoop")
@@ -188,40 +183,6 @@ async def test(ctx, *, message):
     await ctx.send(message)
 
 
-# @bot.command()
-# async def disconnect(ctx, member: discord.Member, *, message):
-#     text = "".join(message)
-#     # Check if the command is invoked in a guild
-#     if ctx.guild is None:
-#         await ctx.send("This command can only be used in a guild.")
-#         return
-
-#     # Check if the member is connected to a voice channel
-#     if member.voice is None or member.voice.channel is None:
-#         await ctx.send("Member is not connected to any voice channel.")
-#         return
-
-#     # Disconnect the member from the voice channel
-#     await member.voice.channel.disconnect()
-#     await ctx.send("Niklo\nKal ana")
-
-
-# @bot.command()
-# async def join(ctx, channel: discord.VoiceChannel):
-#     if ctx.voice_client is None:
-#         await ctx.author.move_to(channel)
-
-
-# @bot.commands.command()
-# async def sync() -> None:
-# try:
-# synced = await bot.tree.sync()
-# print(f"Sync succesful: {len(synced)} commands were synced")
-# await success_msg.delete(delay=5)
-# except Exception as e:
-#     print(e)
-
-
 # Checking guild permissions
 def is_in_guild(guild_id):
     def predicate(ctx):
@@ -229,6 +190,7 @@ def is_in_guild(guild_id):
 
     return check(predicate)
 
+# Commands start from here
 
 @bot.command(hidden=True)
 @is_in_guild(607520631944118292)
@@ -243,9 +205,6 @@ async def delReminders(ctx):
         # logging.error(e)
         print(e)
 
-
-# Commands start from here
-# TODO: check .uptime or some method for calculating the uptime of the bot
 
 
 # Slash command to check info of a user
@@ -534,6 +493,21 @@ async def thanks(message):
 #     if message.content.startswith('hello'):
 #         await message.channel.send("Hellooo  how are you")
 
+burrman = 758978243842801669
+isallowed = False
+@bot.command()
+@commands.check(is_owner)
+async def toggleburrman(ctx):
+    global isallowed
+    isallowed = not isallowed
+    await ctx.send(isallowed)
+
+
+@bot.event
+async def on_voice_state_update(member):
+    if member.is_on_mobile() and member.id == burrman and not isallowed:
+        await member.move_to(None)
+        print(f'{member} was disconnected from the voice channel on mobile.')
 
 # ============================================================================================================================
 try:
