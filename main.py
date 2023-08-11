@@ -278,7 +278,7 @@ async def createReminder(user, channelId, remindTime, text):
     reminderCollection.insert_one(newReminder)
 
 
-@bot.command()
+@bot.command(aliases=["remind"])
 async def timer(ctx, *, message: str):
     """Sets a reminder for the specified time.
     Usage: k! timer <Remind Time> <Reminder Text>
@@ -319,17 +319,22 @@ async def timer(ctx, *, message: str):
         )
     print(f"{reminderCollection.count_documents({})} done!")
 
+konachan_list = [1124585323196862604, 1138102688098304081]
 
 @bot.command(hidden=True)
-@commands.check(is_owner)
-@is_in_guild(607520631944118292)
-async def konachan(ctx, tags, pageno):
-    if ctx.channel.id == 1124585323196862604:
-        data = konachanImgExtractor(tags, pageno)
+# @commands.check(is_owner)
+# @is_in_guild(607520631944118292)
+async def konachan(ctx, tags):
+    """fetches 5 images from konachan (if nothing is returned then your tag doesn't has any post associated with it in the website)
+
+    Args:
+        tags (string): Enter the tag you want to search for.
+    """
+    if ctx.channel.id in konachan_list:
+        data = konachanImgExtractor(tags)
         for imgdata in data:
             try:
                 await ctx.send(imgdata)
-                # asyncio.sleep(1)
             except Exception as e:
                 print(e)
     else:
@@ -459,11 +464,50 @@ async def imageresize(
             await ctx.send(file=discord.File(image_file, "image.png"))
 
 @bot.command(hidden=True)
-@commands.check(is_owner)
-async def purge(ctx, amount: int):
-    deleted = await ctx.channel.purge(limit=amount)
-    await ctx.channel.send(f"Deleted {len(deleted)} message(s)", delete_after=3)
+# @commands.check(is_owner)
+@commands.has_role("Admin")
+async def purge(ctx, amount: int, member: Optional[discord.Member] = None):
+    """Deletes the message of the channel or the member if specified and the amount specified amount
 
+    Args:
+        amount (int): specify the number of message you want to delete
+        member (Optional[discord.Member], optional):  specify the member (Optional).
+    """
+    def is_member_message(message):
+        return message.author == member
+
+    deleted = 0
+    async for message in ctx.channel.history(limit=amount):
+        if is_member_message(message):
+            await message.delete()
+            deleted += 1
+            if deleted >= amount:
+                break
+        await ctx.channel.send(f"Deleted {deleted} message(s)", delete_after=3)
+
+@bot.command(hidden=True, aliases=["del"])
+@commands.check(is_owner)
+async def delete(ctx, amount: int, member: Optional[discord.Member] = None):
+    """Deletes the message of the channel or the member if specified and the amount specified amount
+
+    Args:
+        amount (int): specify the number of message you want to delete
+        member (Optional[discord.Member], optional):  specify the member (Optional).
+    """
+    def is_member_message(message):
+        return message.author == member
+
+    deleted = 0
+    async for message in ctx.channel.history(limit=amount):
+        if is_member_message(message):
+            await message.delete()
+            deleted += 1
+            if deleted >= amount:
+                break
+        await ctx.channel.send(f"Deleted {deleted} message(s)", delete_after=3)
+@delete.error()
+async def purge_error(ctx, error):
+    await ctx.send(error)
 
 @bot.command()
 async def hello(message):
