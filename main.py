@@ -485,6 +485,10 @@ async def purge(ctx, amount: int, member: Optional[discord.Member] = None):
                 break
         await ctx.channel.send(f"Deleted {deleted} message(s)", delete_after=3)
 
+@purge.error
+async def purge_error(ctx, error):
+    await ctx.send(error)
+
 @bot.command(hidden=True, aliases=["del"])
 @commands.check(is_owner)
 async def delete(ctx, amount: int, member: Optional[discord.Member] = None):
@@ -505,8 +509,8 @@ async def delete(ctx, amount: int, member: Optional[discord.Member] = None):
             if deleted >= amount:
                 break
         await ctx.channel.send(f"Deleted {deleted} message(s)", delete_after=3)
-@delete.error()
-async def purge_error(ctx, error):
+@delete.error
+async def delete_error(ctx, error):
     await ctx.send(error)
 
 @bot.command()
