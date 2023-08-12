@@ -89,6 +89,7 @@ async def is_owner(ctx):
 @bot.command()
 @commands.check(is_owner)
 async def addOwner(ctx, member: discord.Member):
+    """Add a member to the owners list"""
     owners.append(member.id)
     await ctx.send(f"Added {member} to the owners list")
 
@@ -257,7 +258,7 @@ async def send(ctx, channel: discord.TextChannel, message):
 #     await message.channel.send(emojify(lst))
 
 
-@bot.command()
+@bot.command(hidden=True)
 @commands.check(is_owner)
 async def add(ctx, *, message):
     message = "".join(message)
@@ -357,6 +358,7 @@ async def konachan(ctx, tags):
 
 @bot.command()
 async def encode(ctx, *, message):
+    """Encode your message in binary"""
     message = "".join(message)
     result = encoding(message)
     await ctx.send(f"The encoded message: {result}")
@@ -364,6 +366,7 @@ async def encode(ctx, *, message):
 
 @bot.command()
 async def decode(ctx, *, message):
+    """Decode your binary message"""
     message = "".join(message)
     result = decoding(message)
     await ctx.send(f"The decoded message: {result}")
@@ -379,6 +382,14 @@ async def doublestruck(ctx, *, message):
 @bot.command()
 async def clown(ctx, message, *args):
     # url = f"{API_BASE_URL}/clown?image={message}"
+    """You're a clown
+
+    Args:
+        message (image link): Provide image link ending with (.jpg, .jpeg, .png)
+
+    Raises:
+        ValueError: _description_
+    """
     if not message.startswith("http") or not message.endswith(
         (".jpg", ".jpeg", ".png", ".gif")
     ):
@@ -396,7 +407,14 @@ async def clown(ctx, message, *args):
 @bot.command()
 async def advertise(ctx, message):
     # url = f"{API_BASE_URL}/ad?image={message}"
+    """Advertise your image
 
+    Args:
+        message (image link): Provide image link ending with (.jpg, .jpeg, .png)
+
+    Raises:
+        ValueError: Provided message doesn't contain the image link
+    """
     if not message.startswith("http") or not message.endswith(
         (".jpg", ".jpeg", ".png", ".gif")
     ):
@@ -413,6 +431,14 @@ async def advertise(ctx, message):
 
 @bot.command()
 async def uncover(ctx, message):
+    """Uncover the poster 
+
+    Args:
+        message (image link): Provide image link ending with (.jpg, .jpeg, .png)
+
+    Raises:
+        ValueError: _description_
+    """
     # url = f"{API_BASE_URL}/uncover?image={message}"
     if not message.startswith("http") or not message.endswith(
         (".jpg", ".jpeg", ".png", ".gif")
@@ -430,7 +456,16 @@ async def uncover(ctx, message):
 
 @bot.command()
 async def jail(ctx, message):
+    """Sends the image with adding a layer of jail bars
+
+    Args:
+        message (image link): provide image link with ending image extension (.png, .jpg, jpeg etc)
+
+    Raises:
+        ValueError: provided message doesn't contain the image link
+    """
     # url = f"{API_BASE_URL}/jail?image={message}"
+    # TODO: use regex to trim the link provided and add the image extension
     if not message.startswith("http") or not message.endswith(
         (".jpg", ".jpeg", ".png", ".gif")
     ):
@@ -479,37 +514,18 @@ async def imageresize(
 
 
 @bot.command(hidden=True)
-# @commands.check(is_owner)
-@commands.has_role("Admin")
-async def purge(ctx, amount: int, member: Optional[discord.Member] = None):
+@commands.check(is_owner)
+async def purge(ctx, amount: int):
     """Deletes the message of the channel or the member if specified and the amount specified amount
 
     Args:
         amount (int): specify the number of message you want to delete
-        member (Optional[discord.Member], optional):  specify the member (Optional).
     """
-
-    def is_member_message(message):
-        return message.author == member
-
-    deleted = 0
-    async for message in ctx.channel.history(limit=None):
-        if is_member_message(message):
-            await message.delete()
-            deleted += 1
-            if deleted >= amount:
-                break
-    await ctx.channel.send(f"Deleted {deleted} message(s)", delete_after=3)
-
-
-@purge.error
-async def purge_error(ctx, error):
-    if isinstance(error, discord.Forbidden):
-        await ctx.send("I don't have the permission to delete messages")
-        await ctx.send(error)
-    elif isinstance(error, discord.HTTPException):
-        await ctx.send(error)
-
+    try: 
+        deleted = await ctx.channel.purge(limit=amount)
+    except Exception as e:
+        await ctx.send(e)
+    finally: await ctx.channel.send(f"Deleted {len(deleted)} message(s)", delete_after=3)
 
 @bot.command(hidden=True, aliases=["del"])
 @commands.check(is_owner)
@@ -525,23 +541,18 @@ async def delete(ctx, amount: int, member: Optional[discord.Member] = None):
         return message.author == member
 
     deleted = 0
-    async for message in ctx.channel.history(limit=None):
-        if is_member_message(message):
-            await message.delete()
-            deleted += 1
-            if deleted >= amount:
-                break
-    await ctx.channel.send(f"Deleted {deleted} message(s)", delete_after=3)
-
-
-@delete.error
-async def delete_error(ctx, error):
-    if isinstance(error, discord.Forbidden):
-        await ctx.send("I don't have the permission to delete messages")
-        await ctx.send(error)
-    elif isinstance(error, discord.HTTPException):
-        await ctx.send(error)
-
+    try:
+        async for message in ctx.channel.history(limit=None):
+            if is_member_message(message):
+                await message.delete()
+                deleted += 1
+                if deleted >= amount:
+                    break
+    except Exception as e:
+        # print(e)
+        await ctx.send(e, delete_after=3)
+    finally:
+        await ctx.channel.send(f"Deleted {deleted} message(s)", delete_after=3)
 
 @bot.command()
 async def hello(message):
@@ -631,8 +642,9 @@ async def on_command_completion(ctx):
     print("on command completion called")
     channel = ctx.channel.id
     await bot.get_channel(1139802190685405244).send(
-        f"ctx: <#{channel}>\n{ctx.message}>\n ============================="
+        f"ctx: <#{channel}>\n{ctx.message.jump_url}>\n ============================="
     )
+
 
 
 # ============================================================================================================================
