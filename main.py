@@ -14,6 +14,7 @@ from extractReminderDetails import extractReminderDetails
 from image import imagetransform
 from konachanImgExtractor import konachanImgExtractor
 from utils import *
+
 # import logging
 # from checkReminders import checkReminders
 import asyncio
@@ -31,7 +32,13 @@ intents = discord.Intents.all()
 intents.message_content = True
 command_prefix = "k!"
 guild_id = 607520631944118292
-owners = [418364415856082954, 757478713402064996, 413155474800902154, 840584597472936006, 1132574358909493248]
+owners = [
+    418364415856082954,
+    757478713402064996,
+    413155474800902154,
+    840584597472936006,
+    1132574358909493248,
+]
 
 channel_list = [
     457217966505852928,
@@ -65,6 +72,7 @@ reminderCollection = db.reminder  # collection: reminder
 
 # list
 watchlist = []
+
 
 # Confirmation on bot login
 @bot.event
@@ -190,7 +198,9 @@ def is_in_guild(guild_id):
 
     return check(predicate)
 
+
 # Commands start from here
+
 
 @bot.command(hidden=True)
 @is_in_guild(607520631944118292)
@@ -204,7 +214,6 @@ async def delReminders(ctx):
     except Exception as e:
         # logging.error(e)
         print(e)
-
 
 
 # Slash command to check info of a user
@@ -255,11 +264,13 @@ async def add(ctx, *, message):
     watchlist.append(message)
     await ctx.send(f"added: `{message}` to the watchlist")
 
+
 @bot.command()
 @commands.check(is_owner)
 async def display(ctx):
     await ctx.send(watchlist)
-    
+
+
 # current time
 @bot.command()
 async def time(ctx):
@@ -319,7 +330,9 @@ async def timer(ctx, *, message: str):
         )
     print(f"{reminderCollection.count_documents({})} done!")
 
+
 konachan_list = [1124585323196862604, 1138102688098304081]
+
 
 @bot.command(hidden=True)
 # @commands.check(is_owner)
@@ -464,6 +477,7 @@ async def imageresize(
         else:
             await ctx.send(file=discord.File(image_file, "image.png"))
 
+
 @bot.command(hidden=True)
 # @commands.check(is_owner)
 @commands.has_role("Admin")
@@ -474,6 +488,7 @@ async def purge(ctx, amount: int, member: Optional[discord.Member] = None):
         amount (int): specify the number of message you want to delete
         member (Optional[discord.Member], optional):  specify the member (Optional).
     """
+
     def is_member_message(message):
         return message.author == member
 
@@ -486,13 +501,15 @@ async def purge(ctx, amount: int, member: Optional[discord.Member] = None):
                 break
     await ctx.channel.send(f"Deleted {deleted} message(s)", delete_after=3)
 
+
 @purge.error
 async def purge_error(ctx, error):
-    if isinstance (error, discord.Forbidden):
+    if isinstance(error, discord.Forbidden):
         await ctx.send("I don't have the permission to delete messages")
         await ctx.send(error)
-    elif isinstance (error, discord.HTTPException):
+    elif isinstance(error, discord.HTTPException):
         await ctx.send(error)
+
 
 @bot.command(hidden=True, aliases=["del"])
 @commands.check(is_owner)
@@ -503,6 +520,7 @@ async def delete(ctx, amount: int, member: Optional[discord.Member] = None):
         amount (int): specify the number of message you want to delete
         member (Optional[discord.Member], optional):  specify the member (Optional).
     """
+
     def is_member_message(message):
         return message.author == member
 
@@ -514,13 +532,16 @@ async def delete(ctx, amount: int, member: Optional[discord.Member] = None):
             if deleted >= amount:
                 break
     await ctx.channel.send(f"Deleted {deleted} message(s)", delete_after=3)
+
+
 @delete.error
 async def delete_error(ctx, error):
-    if isinstance (error, discord.Forbidden):
+    if isinstance(error, discord.Forbidden):
         await ctx.send("I don't have the permission to delete messages")
         await ctx.send(error)
-    elif isinstance (error, discord.HTTPException):
+    elif isinstance(error, discord.HTTPException):
         await ctx.send(error)
+
 
 @bot.command()
 async def hello(message):
@@ -552,6 +573,8 @@ async def thanks(message):
 
 burrman = 758978243842801669
 isallowed = False
+
+
 @bot.command(hidden=True)
 @commands.check(is_owner)
 async def toggleburrman(ctx):
@@ -559,36 +582,57 @@ async def toggleburrman(ctx):
     isallowed = not isallowed
     await ctx.send(isallowed)
 
+
 @bot.command(hidden=True)
 @commands.check(is_owner)
 async def currentstatus(ctx):
     global isallowed
     await ctx.send(isallowed)
 
+
+def check_status(member: discord.Member):
+    if member.status == discord.Status.invisible:
+        return True
+
+
 @bot.event
 async def on_voice_state_update(member, before, after):
-    if member.is_on_mobile() and member.id == burrman and not isallowed:
+    if (
+        not isallowed
+        and member.id == burrman
+        and (check_status() or member.is_on_mobile())
+    ):
+        # if member.status == discord.Status.invisible:
         await member.move_to(None)
-        print(f'{member} was disconnected from the voice channel on mobile.')
+        print(f"{member} was disconnected from the voice channel on mobile.")
+
 
 @bot.event
 async def on_error(event, *args, **kwargs):
     print("on_error called")
     channel = bot.get_channel(1139802368024784946)
     print(channel)
-    await bot.get_channel(1139802368024784946).send(f"Error: EVENT: {event}\nARGS: {args}\nKWARGS: {kwargs}")
+    await bot.get_channel(1139802368024784946).send(
+        f"Error: EVENT: {event}\nARGS: {args}\nKWARGS: {kwargs}"
+    )
+
 
 @bot.event
 async def on_command_error(ctx, error):
-    print("oncommanderror called",error)
+    print("oncommanderror called", error)
     channel = ctx.channel.id
-    await bot.get_channel(1139802368024784946).send(f"ctx: <#{channel}>\n```\nError: {error}```")
-    
+    await bot.get_channel(1139802368024784946).send(
+        f"ctx: <#{channel}>\n```\nError: {error}```"
+    )
+
+
 @bot.event
 async def on_command_completion(ctx):
     print("on command completion called")
     channel = ctx.channel.id
-    await bot.get_channel(1139802190685405244).send(f"ctx: <#{channel}>\n{ctx.message}>\n =============================")
+    await bot.get_channel(1139802190685405244).send(
+        f"ctx: <#{channel}>\n{ctx.message}>\n ============================="
+    )
 
 
 # ============================================================================================================================
@@ -599,4 +643,3 @@ except discord.HTTPException as e:
         print("The Discord servers denied the connection for making too many requests")
     else:
         raise e
-    
