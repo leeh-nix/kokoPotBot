@@ -334,11 +334,12 @@ async def konachan(ctx, tags):
         data = konachanImgExtractor(tags)
         for imgdata in data:
             try:
+                print(imgdata)
                 await ctx.send(imgdata)
             except Exception as e:
                 print(e)
     else:
-        ctx.send("Error: You are not in the right channel.")
+        await ctx.send("Error: You are not in the right channel.")
 
 
 @bot.command()
@@ -477,17 +478,21 @@ async def purge(ctx, amount: int, member: Optional[discord.Member] = None):
         return message.author == member
 
     deleted = 0
-    async for message in ctx.channel.history(limit=amount):
+    async for message in ctx.channel.history(limit=None):
         if is_member_message(message):
             await message.delete()
             deleted += 1
             if deleted >= amount:
                 break
-        await ctx.channel.send(f"Deleted {deleted} message(s)", delete_after=3)
+    await ctx.channel.send(f"Deleted {deleted} message(s)", delete_after=3)
 
 @purge.error
 async def purge_error(ctx, error):
-    await ctx.send(error)
+    if isinstance (error, discord.Forbidden):
+        await ctx.send("I don't have the permission to delete messages")
+        await ctx.send(error)
+    elif isinstance (error, discord.HTTPException):
+        await ctx.send(error)
 
 @bot.command(hidden=True, aliases=["del"])
 @commands.check(is_owner)
@@ -502,16 +507,20 @@ async def delete(ctx, amount: int, member: Optional[discord.Member] = None):
         return message.author == member
 
     deleted = 0
-    async for message in ctx.channel.history(limit=amount):
+    async for message in ctx.channel.history(limit=None):
         if is_member_message(message):
             await message.delete()
             deleted += 1
             if deleted >= amount:
                 break
-        await ctx.channel.send(f"Deleted {deleted} message(s)", delete_after=3)
+    await ctx.channel.send(f"Deleted {deleted} message(s)", delete_after=3)
 @delete.error
 async def delete_error(ctx, error):
-    await ctx.send(error)
+    if isinstance (error, discord.Forbidden):
+        await ctx.send("I don't have the permission to delete messages")
+        await ctx.send(error)
+    elif isinstance (error, discord.HTTPException):
+        await ctx.send(error)
 
 @bot.command()
 async def hello(message):
@@ -562,6 +571,26 @@ async def on_voice_state_update(member, before, after):
         await member.move_to(None)
         print(f'{member} was disconnected from the voice channel on mobile.')
 
+@bot.event
+async def on_error(event, *args, **kwargs):
+    print("on_error called")
+    channel = bot.get_channel(1139802368024784946)
+    print(channel)
+    await bot.get_channel(1139802368024784946).send(f"Error: EVENT: {event}\nARGS: {args}\nKWARGS: {kwargs}")
+
+@bot.event
+async def on_command_error(ctx, error):
+    print("oncommanderror called",error)
+    channel = ctx.channel.id
+    await bot.get_channel(1139802368024784946).send(f"ctx: <#{channel}>\n```\nError: {error}```")
+    
+@bot.event
+async def on_command_completion(ctx):
+    print("on command completion called")
+    channel = ctx.channel.id
+    await bot.get_channel(1139802190685405244).send(f"ctx: <#{channel}>\n{ctx.message}>\n =============================")
+
+
 # ============================================================================================================================
 try:
     bot.run(TOKEN)
@@ -570,3 +599,4 @@ except discord.HTTPException as e:
         print("The Discord servers denied the connection for making too many requests")
     else:
         raise e
+    
