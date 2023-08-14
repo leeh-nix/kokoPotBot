@@ -554,6 +554,23 @@ async def delete(ctx, amount: int, member: Optional[discord.Member] = None):
     finally:
         await ctx.channel.send(f"Deleted {deleted} message(s)", delete_after=3)
 
+@bot.hybrid_command()
+async def embed(
+    ctx,
+    content,
+    title,
+    description,
+    color: discord.Colour,
+    footer: Optional[str] = None,
+    embed_url: Optional[str] = None,
+):
+    embed = discord.Embed(
+        title=title, description=description, color=color, url=embed_url
+    )
+    embed.set_footer(text=footer)
+    embed.timestamp = datetime.datetime.utcnow()
+    await ctx.send(content, embed=embed, tts=False)
+
 @bot.command()
 async def hello(message):
     await message.channel.send("Hello!")
