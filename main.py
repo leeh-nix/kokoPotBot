@@ -32,6 +32,7 @@ intents = discord.Intents.all()
 intents.message_content = True
 command_prefix = "k!"
 guild_id = 607520631944118292
+# koksie, marteeen, 
 owners = [
     418364415856082954, 
     757478713402064996,
@@ -73,31 +74,44 @@ reminderCollection = db.reminder  # collection: reminder
 # list
 watchlist = []
 
+# MoshiMoshi server
+MoshiMoshi = "852092404604469278"
 
 # Confirmation on bot login
 @bot.event
 async def on_ready():
     print("We have logged in as {0.user}".format(bot))
     await startReminderLoop()
-    
+
+# Defining checks
+# Guild
+def is_in_guild(guild_id):
+    def predicate(ctx):
+        return ctx.guild is not None and ctx.guild.id == guild_id
+    return check(predicate)
+
+# Owners
+async def is_owner(ctx):
+    if ctx.author.id in owners:
+        return True
+
 @bot.event
+@is_in_guild(MoshiMoshi)
 async def on_message(message):
-    if message.author == bot.user:
-        return
-    if  "chatko" in message.content:
-        try: await chatko(message)
-        except Exception as e: print(e)
-        finally: await message.reply("kal ana kall")
+    if message.author.id in owners:
+        if  "chatko" in message.content:
+            try: await chatko(message)
+            except Exception as e: print(e)
+            finally: await message.reply("kal ana kall")
+    
+    # passing the message command for other bot commands if not chatko not found
+    await bot.process_commands(message)
 
 async def chatko(ctx):
     if ctx.author.voice and ctx.author.voice.channel:
         voice_channel = ctx.author.voice.channel
         for member in voice_channel.members:
             await member.move_to(None)
-
-async def is_owner(ctx):
-    if ctx.author.id in owners:
-        return True
 
 
 @bot.command()
@@ -205,17 +219,7 @@ async def test(ctx, *, message):
     print(message)
     await ctx.send(message)
 
-
-# Checking guild permissions
-def is_in_guild(guild_id):
-    def predicate(ctx):
-        return ctx.guild is not None and ctx.guild.id == guild_id
-
-    return check(predicate)
-
-
 # Commands start from here
-
 
 @bot.command(hidden=True)
 @is_in_guild(607520631944118292)
@@ -264,13 +268,6 @@ async def send(ctx, channel: discord.TextChannel, message):
         await ctx.send("Message sent successfully.")
     else:
         await ctx.send("Invalid channel ID.")
-
-
-# @bot.command()
-# async def emoji(message, *lst):
-#     lst = list(lst)
-#     await message.channel.send(emojify(lst))
-
 
 @bot.command(hidden=True)
 @commands.check(is_owner)
@@ -345,7 +342,7 @@ async def timer(ctx, *, message: str):
         )
     print(f"{reminderCollection.count_documents({})} done!")
 
-
+# kokos pot server, nsfw bot spam GYAN's server
 konachan_list = [1124585323196862604, 1138102688098304081]
 
 
@@ -605,13 +602,6 @@ async def thanks(message):
     await message.channel.send("Always there for you <3")
 
 
-# @bot.event
-# async def on_message(message):
-#     if message.author == bot.user:
-#         return
-
-#     if message.content.startswith('hello'):
-#         await message.channel.send("Hellooo  how are you")
 # [kokose: 418364415856082954, bisskut 757478713402064996]
 burrman = [758978243842801669]
 isallowed = False
@@ -622,6 +612,7 @@ isallowed = False
 async def toggleburrman(ctx):
     global isallowed
     isallowed = not isallowed
+    print(isallowed)
     await ctx.send(isallowed)
 
 
@@ -636,17 +627,18 @@ async def on_voice_state_update(member, before, after):
     def should_kick():
         if member.id in burrman:
             if isallowed: return False
-            if member.is_on_mobile():
-                if member.status == discord.Status.invisible:
-                    return True
-            return True
+            if member.is_on_mobile(): return True
+            if member.status == discord.Status.offline: 
+                # print(member, " ", member.status, "\n", discord.Status.offline, "fired!!!!!!")
+                return True
         return False
 
     if should_kick():
         await member.move_to(None)
-        await bot.get_channel(992455714662514851).send(f"{member} was disconnected from the voice channel on mobile.")
         print(f"{member} was disconnected from the voice channel on mobile.")
 
+    if should_kick() and member.voice.channel:
+        await bot.get_channel(992455714662514851).send(f"{member} was disconnected from the voice channel on mobile.", delete_after=5)
 
 @bot.event
 async def on_error(event, *args, **kwargs):
