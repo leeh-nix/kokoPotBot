@@ -33,7 +33,7 @@ intents.message_content = True
 command_prefix = "k!"
 guild_id = 607520631944118292
 owners = [
-    418364415856082954,
+    418364415856082954, 
     757478713402064996,
     413155474800902154,
     840584597472936006,
@@ -79,7 +79,21 @@ watchlist = []
 async def on_ready():
     print("We have logged in as {0.user}".format(bot))
     await startReminderLoop()
+    
+@bot.event
+async def on_message(message):
+    if message.author == bot.user:
+        return
+    if  "chatko" in message.content:
+        try: await chatko(message)
+        except Exception as e: print(e)
+        finally: await message.reply("kal ana kall")
 
+async def chatko(ctx):
+    if ctx.author.voice and ctx.author.voice.channel:
+        voice_channel = ctx.author.voice.channel
+        for member in voice_channel.members:
+            await member.move_to(None)
 
 async def is_owner(ctx):
     if ctx.author.id in owners:
@@ -633,12 +647,6 @@ async def on_voice_state_update(member, before, after):
         await bot.get_channel(992455714662514851).send(f"{member} was disconnected from the voice channel on mobile.")
         print(f"{member} was disconnected from the voice channel on mobile.")
 
-# if (
-#     not isallowed
-#     and member.id == burrman
-#     and (check_status() or member.is_on_mobile())
-# ):
-#     pass
 
 @bot.event
 async def on_error(event, *args, **kwargs):
