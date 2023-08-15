@@ -231,7 +231,7 @@ async def tag(message, member: discord.Member):
 
 
 @tag.error
-async def info_error(ctx, error):
+async def tag_error(ctx, error):
     if isinstance(error, commands.BadArgument):
         await ctx.send("I could not find that member...")
 
@@ -320,7 +320,7 @@ async def timer(ctx, *, message: str):
             )
         else:
             await createReminder(user, channelId, remindTime, text)
-            await ctx.channel.send("Reminder added successfully")
+            # await ctx.channel.send("Reminder added successfully")
             await ctx.send(
                 f"Reminder set for <t:{remindTime}:f>. I will notify you in <t:{remindTime}:R>."
             )
@@ -598,8 +598,8 @@ async def thanks(message):
 
 #     if message.content.startswith('hello'):
 #         await message.channel.send("Hellooo  how are you")
-
-burrman = 758978243842801669
+# [kokose: 418364415856082954, bisskut 757478713402064996]
+burrman = [758978243842801669]
 isallowed = False
 
 
@@ -617,23 +617,28 @@ async def currentstatus(ctx):
     global isallowed
     await ctx.send(isallowed)
 
-
-def check_status(member: discord.Member):
-    if member.status == discord.Status.invisible:
-        return True
-
-
 @bot.event
 async def on_voice_state_update(member, before, after):
-    if (
-        not isallowed
-        and member.id == burrman
-        and (check_status() or member.is_on_mobile())
-    ):
-        # if member.status == discord.Status.invisible:
+    def should_kick():
+        if member.id in burrman:
+            if isallowed: return False
+            if member.is_on_mobile():
+                if member.status == discord.Status.invisible:
+                    return True
+            return True
+        return False
+
+    if should_kick():
         await member.move_to(None)
+        await bot.get_channel(992455714662514851).send(f"{member} was disconnected from the voice channel on mobile.")
         print(f"{member} was disconnected from the voice channel on mobile.")
 
+# if (
+#     not isallowed
+#     and member.id == burrman
+#     and (check_status() or member.is_on_mobile())
+# ):
+#     pass
 
 @bot.event
 async def on_error(event, *args, **kwargs):
@@ -659,7 +664,7 @@ async def on_command_completion(ctx):
     print("on command completion called")
     channel = ctx.channel.id
     await bot.get_channel(1139802190685405244).send(
-        f"ctx: <#{channel}>\n{ctx.message.jump_url}>\n ============================="
+        f"ctx: <#{channel}>\n{ctx.message.jump_url}>\n =============================", suppress_embeds=True
     )
 
 
