@@ -48,7 +48,6 @@ def extractReminderDetails(message: str):
     print(f"text: {text}")
     return {"givenTime": givenTime, "remindTime": remindTime, "text": text}
 
-
 # result = extractReminderDetails(
 #     message="5 days 4 hours 3 minutes 2 seconds me to to do me and in you something in "
 # )
