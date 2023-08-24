@@ -1,3 +1,4 @@
+import discord
 from discord.ext.commands import check
 
 # Add checks here along with the variables used in it
@@ -17,7 +18,11 @@ async def is_owner(ctx):
             return True
 
 # Guild
-def is_in_guild(guild_id):
+def is_in_guild(guild_id: discord.Guild.id) -> check:
+    def predicate(ctx):
+        return ctx.guild is not None and ctx.guild.id == guild_id
+    return check(predicate)
+def is_in_guild(guild_id: discord.Guild) -> check:
     def predicate(ctx):
         return ctx.guild is not None and ctx.guild.id == guild_id
     return check(predicate)

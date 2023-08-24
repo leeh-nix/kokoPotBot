@@ -30,13 +30,17 @@ intents.message_content = True
 command_prefix = "k!"
 guild_id = 607520631944118292
 
+gods = {
+    "kuroko": 418364415856082954,
+    "sakura": 413155474800902154,
+}
 # koksie, marteeen,
 owners = {
     "kuroko": 418364415856082954,
     "bisskut": 757478713402064996,
     "sakura": 413155474800902154,
-    "rileyyy": 911968173606195250,
-    "Marteeen": 840584597472936006,
+    "riley": 911968173606195250,
+    "marteeen": 840584597472936006,
 }
 
 channel_list = [
@@ -56,12 +60,11 @@ bot = commands.Bot(
     intents=intents,
 )
 
-
 # list
 watchlist = []
 
 # MoshiMoshi server
-MoshiMoshi = "852092404604469278"
+MoshiMoshi: discord.Guild.id = 852092404604469278
 
 
 # Confirmation on bot login
@@ -70,21 +73,12 @@ async def on_ready():
     print("We have logged in as {0.user}".format(bot))
 
 
-# Defining checks
-
-# Owners
-# async def is_owner(ctx):
-#     if ctx.author.id in owners:
-#         return True
-
-
 @bot.event
 @is_in_guild(MoshiMoshi)
 async def on_message(message):
-    message = message.lower()
-    if message.author.id in owners:
-        # FIXME: add .lower() for message
-        if message.startswith("chatko"):
+    if message.author.id in owners.values():
+        if message.content.lower().startswith("chatko"):
+            print("started with chatko")
             try:
                 await chatko(message)
             except Exception as e:
@@ -103,12 +97,19 @@ async def chatko(ctx):
             await member.move_to(None)
 
 
-# @bot.command()
-# @commands.check(is_owner)
-# async def addOwner(ctx, member: discord.Member):
+# FIXME: doesnt work properly || only removes from the cache || use database for it!!
+# @bot.command(hidden=True)
+# # @commands.check(is_owner)
+# async def removeOwner(ctx, member):
 #     """Add a member to the owners list"""
-#     owners.append(member.id)
-#     await ctx.send(f"Added {member} to the owners list")
+#     if ctx.author.id in gods.values():
+#         owners.__delitem__(member)
+#     await ctx.send(f"```py\n{owners}```")
+
+
+# @bot.command(hidden=True)
+# async def displayOwners(ctx):
+#     await ctx.send(f"```py\n{owners}```")
 
 
 @bot.command(hidden=True)
