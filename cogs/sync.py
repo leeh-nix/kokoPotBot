@@ -2,12 +2,19 @@ import discord
 from discord.ext import commands
 from typing import Literal, Optional
 
+
+# FIXME: make it print the command which got synced
 class Sync(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        
+
     @commands.command(hidden=True)
-    async def sync(self, ctx: commands.Context, guilds: commands.Greedy[discord.Object], spec: Optional[Literal["~", "*", "^"]] = None) -> None:
+    async def sync(
+        self,
+        ctx: commands.Context,
+        guilds: commands.Greedy[discord.Object],
+        spec: Optional[Literal["~", "*", "^"]] = None,
+    ) -> None:
         if not guilds:
             if spec == "~":
                 synced = await ctx.bot.tree.sync(guild=ctx.guild)
@@ -19,10 +26,11 @@ class Sync(commands.Cog):
                 await ctx.bot.tree.sync(guild=ctx.guild)
                 synced = []
             else:
-                synced = await ctx.bot.tree.sync()
+                synced: list[str] = await ctx.bot.tree.sync()
 
+            synced_commands = [command.name for command in synced]
             await ctx.send(
-                f"Synced {len(synced)} commands {'globally' if spec is None else 'to the current guild.'}"
+                f"```Synced {len(synced)} commands {'globally' if spec is None else 'to the current guild.'}. Synced commands: {', '.join(synced_commands)}```"
             )
             return
 

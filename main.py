@@ -9,7 +9,7 @@ from typing import Literal, Optional
 
 # import typing
 
-from cogs.reminder import *
+# from cogs.reminder import *
 from functions.extractReminderDetails import extractReminderDetails
 from functions.imageTransform import imageTransform
 from functions.konachanImgExtractor import konachanImgExtractor

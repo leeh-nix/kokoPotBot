@@ -1,23 +1,31 @@
+import discord
 from discord.ext import commands
-from discord import TextChannel
+from discord.ext.commands import TextChannelConverter
 from functions.checks import is_owner
 
+
 class Send(commands.Cog):
+    def __init__(self, bot):
+        self.bot = bot
+
     @commands.hybrid_command()
     @commands.check(is_owner)
-    async def send(ctx, channel: TextChannel, message):
-        """Sends a message to specified channel
+    async def send(self, ctx, channel: discord.TextChannel, *, message):
+        """Sends a message to the specified channel.
+
         Args:
-            channelId (int): specify the channel ID
-            message (str): Message you want to send
+            channel (discord.TextChannel): The channel to send the message to.
+            message (str): The message content.
         """
-        channel = channel
-        if channel:
+        try:
             await channel.send(message)
-            await ctx.send("Message sent successfully.")
-        else:
-            await ctx.send("Invalid channel ID.")
-            
+            await ctx.send("Message sent successfully.", delete_after=5)
+        except discord.HTTPException as e:
+            await ctx.send(f"An error occurred: {e}")
+
     @send.error
     async def send_error(self, ctx, error):
-        await ctx.send(error)
+        if isinstance(error, commands.CheckFailure):
+            await ctx.send("You are not the bot owner.", delete_after=5)
+        else:
+            await ctx.send(f"An error occurred: {error}")
