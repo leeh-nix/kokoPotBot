@@ -1,3 +1,4 @@
+import discord
 from discord.ext import commands
 
 class TextCommands(commands.Cog):
@@ -17,6 +18,10 @@ class TextCommands(commands.Cog):
     async def pat(self, message):
         await message.channel.send("Aww thank you cutie i really need that sometimes <3")
 
+    @commands.hybrid_command()
+    async def pingalinga(ctx,amount: int, member:discord.Member, *, message) :
+        for i in range(amount):
+            await ctx.send(f"{member.mention} {message}")
 
     @commands.command(aliases=["tq", "thankq", "ty"])
     async def thanks(self, message):
