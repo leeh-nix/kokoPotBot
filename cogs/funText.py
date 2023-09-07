@@ -1,7 +1,7 @@
 import discord
 from discord.ext import commands
 from functions.checks import is_in_guild
-
+# from functions.translator import translator
 
 class TextCommands(commands.Cog):
     def __init__(self, bot):

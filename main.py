@@ -42,6 +42,7 @@ owners = {
     "riley": 911968173606195250,
     "marteeen": 840584597472936006,
 }
+burrman = [758978243842801669]
 
 channel_list = [
     457217966505852928,
@@ -76,7 +77,12 @@ async def on_ready():
 @bot.event
 @is_in_guild(MoshiMoshi)
 async def on_message(message):
-    if message.author.id in owners.values():
+    member = message.author
+    if member.id in burrman and member.is_on_mobile():
+        print("started with mobile")
+        await message.channel.send("typing from mobile eww")
+        await message.channel.send(f"# {member.mention} **PC SE AO** 🤢 🤮 ")
+    if member.id in owners.values():
         if message.content.lower().startswith("chatko"):
             print("started with chatko")
             try:
@@ -260,7 +266,6 @@ async def embed(
 
 
 # [kokose: 418364415856082954, bisskut 757478713402064996]
-burrman = [758978243842801669]
 isallowed = False
 
 

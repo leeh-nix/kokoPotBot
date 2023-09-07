@@ -11,6 +11,10 @@ owners = {
     "Marteeen": 840584597472936006,
 }
 
+guilds = {
+    "MoshiMoshi": 852092404604469278
+}
+
 # Owner
 async def is_owner(ctx):
     for values, keys in owners.items():
@@ -22,7 +26,10 @@ def is_in_guild(guild_id: discord.Guild.id) -> check:
     def predicate(ctx):
         return ctx.guild is not None and ctx.guild.id == guild_id
     return check(predicate)
-def is_in_guild(guild_id: discord.Guild) -> check:
-    def predicate(ctx):
-        return ctx.guild is not None and ctx.guild.id == guild_id
-    return check(predicate)
+# def is_in_guild(guild_id) -> check:
+#     def predicate(ctx):
+#         for values, keys in guilds.items():
+#             if ctx.guild.id == keys:
+#                 return True
+#         return ctx.guild is not None and ctx.guild.id == guild_id
+#     return check(predicate)
