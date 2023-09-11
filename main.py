@@ -8,8 +8,7 @@ import os
 from typing import Literal, Optional
 
 # import typing
-
-# from cogs.reminder import *
+from cogs.reminder import reminderCollection
 from functions.extractReminderDetails import extractReminderDetails
 from functions.imageTransform import imageTransform
 from functions.konachanImgExtractor import konachanImgExtractor
@@ -72,6 +71,7 @@ MoshiMoshi: discord.Guild.id = 852092404604469278
 @bot.event
 async def on_ready():
     print("We have logged in as {0.user}".format(bot))
+    await startReminderLoop()
 
 
 @bot.event
@@ -102,6 +102,115 @@ async def chatko(ctx):
         for member in voice_channel.members:
             await member.move_to(None)
 
+async def checkReminders():
+    print("Checked reminders.")
+    while True:
+        currentTime = datetime.datetime.now().timestamp() // 1
+
+        # Get reminders from the database collection that match the current time
+        reminders = reminderCollection.find({"remindTime": {"$lte": currentTime}})
+
+        for reminder in reminders:
+            remindTime = reminder["remindTime"]
+            text = reminder["text"]
+            userId = reminder["userId"]
+            channel = reminder["channelId"]
+
+            # Do something with the reminder, e.g., send a message to the member
+            if remindTime == currentTime:
+                await bot.get_channel(channel).send(
+                    f"<@{userId}>, here's your reminder: {text}"
+                )
+                reminderCollection.delete_one({"userID": userId})
+
+            # elif remindTime < currentTime:
+
+        # Remove the reminder from the collection after processing
+
+        # print("Checked reminders.")
+
+        # Wait for a specific remindTime before checking again (e.g., 1 second)
+        await asyncio.sleep(1)
+
+
+async def startReminderLoop():
+    while True:
+        await checkReminders()
+        
+@bot.command()
+@commands.check(is_owner)
+async def startRemindLoop(ctx):
+    await startReminderLoop()
+    await ctx.send("Reminder loop started")
+    print("startReminderLoop")
+
+
+@startRemindLoop.error
+async def info_error(ctx, error):
+    if isinstance(error, commands.BadArgument):
+        await ctx.send("Error starting reminder loop")
+
+async def createReminder(user, channelId, remindTime, text):
+    newReminder = {
+        "userId": user,
+        "channelId": channelId,
+        "remindTime": remindTime,
+        "text": text,
+    }
+    reminderCollection.insert_one(newReminder)
+        
+@bot.command()
+async def timer(ctx, *, message: str):
+        """Sets a reminder for the specified time.
+        Usage: k! timer <Remind Time> <Reminder Text>
+        eg. k!timer 1d 2h 3m 4s to touch grass
+        """
+        print("=================================================")
+        print(message, type(message))
+        givenMessage = "".join(message)
+
+        reminderDetails = extractReminderDetails(givenMessage)
+        print(
+            f"givenTime: {reminderDetails['givenTime']} remindTime: {reminderDetails['remindTime']} string: {reminderDetails['text']}"
+        )
+        givenTime = reminderDetails["givenTime"]
+        # print(reminderDetails["givenTime"])
+        # print(reminderDetails["remindTime"])
+        # print(reminderDetails["text"])
+        remindTime = int(reminderDetails["remindTime"])
+        text = reminderDetails["text"]
+        user = ctx.author.id
+        channelId = ctx.channel.id
+        try:
+            if givenTime == 0:
+                await ctx.send(
+                    "Please enter a valid time or use k!help remind for help on this command."
+                )
+            else:
+                await createReminder(user, channelId, remindTime, text)
+                # await ctx.channel.send("Reminder added successfully")
+                await ctx.send(
+                    f"Reminder set for <t:{remindTime}:f>. I will notify you in <t:{remindTime}:R>."
+                )
+        except Exception as e:
+            # logging.error(f"An error occurred: {e}")
+            await ctx.send(
+                "An error occurred while setting the reminder. Please try again later."
+            )
+        print(f"{reminderCollection.count_documents({})} done!")
+        
+@bot.command(hidden=True)
+@is_in_guild(607520631944118292)
+async def delReminders(ctx):
+    """Deletes all remidner with remindTime less than current time."""
+    currentTime = datetime.datetime.now().timestamp() // 1
+    try:
+        reminderCollection.delete_many({"remindTime": {"$lt": currentTime}})
+        await ctx.send("Deleted all completed reminders")
+        await ctx.send("Reminders Count: ", reminderCollection.count_documents({}))
+    except Exception as e:
+        # logging.error(e)
+        print(e)
 
 # FIXME: doesnt work properly || only removes from the cache || use database for it!!
 # @bot.command(hidden=True)
