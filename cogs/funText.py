@@ -1,6 +1,6 @@
 import discord
 from discord.ext import commands
-from functions.checks import is_in_guild
+from functions.checks import is_in_guild, is_owner
 # from functions.translator import translator
 
 class TextCommands(commands.Cog):
@@ -22,7 +22,7 @@ class TextCommands(commands.Cog):
         )
 
     @commands.hybrid_command()
-    @is_in_guild(852092404604469278) #MoshiMoshi
+    @commands.check(is_owner)
     async def pingalinga(self, ctx, amount: int, member: discord.Member, *, message):
         if amount < 15:
             for i in range(amount):
@@ -32,7 +32,7 @@ class TextCommands(commands.Cog):
     
     @pingalinga.error
     async def pingalinga_error(self, ctx, error):
-        await ctx.send(f"eihter its not available for your server or you're using it wrongly\nUse Syntax: k!pingalinga <amount(15)> <member> <message>")
+        await ctx.send(f"Either you don't have the privilage to use this command or you're using it wrongly\n`k!pingalinga <amount(15)> <member> <message>`")
 
     @commands.command(aliases=["tq", "thankq", "ty"])
     async def thanks(self, message):

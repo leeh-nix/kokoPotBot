@@ -9,13 +9,18 @@ from typing import Literal, Optional
 
 # import typing
 from cogs.reminder import reminderCollection
+
+from commissions.commissions_event_handler import on_message
+
 from functions.extractReminderDetails import extractReminderDetails
 from functions.imageTransform import imageTransform
 from functions.konachanImgExtractor import konachanImgExtractor
 from functions.checks import is_owner, is_in_guild
-from commandLoader import *
+
+from commandLoader import add_cogs
 import asyncio
 import tracemalloc
+
 
 tracemalloc.start()
 dotenv.load_dotenv()
@@ -60,9 +65,6 @@ bot = commands.Bot(
     intents=intents,
 )
 
-# list
-watchlist = []
-
 # MoshiMoshi server
 MoshiMoshi: discord.Guild.id = 852092404604469278
 
@@ -73,34 +75,6 @@ async def on_ready():
     print("We have logged in as {0.user}".format(bot))
     await startReminderLoop()
 
-
-@bot.event
-@is_in_guild(MoshiMoshi)
-async def on_message(message):
-    member = message.author
-    if member.id in burrman and member.is_on_mobile():
-        print("started with mobile")
-        await message.channel.send("typing from mobile eww")
-        await message.channel.send(f"# {member.mention} **PC SE AO** 🤢 🤮 ")
-    if member.id in owners.values():
-        if message.content.lower().startswith("chatko"):
-            print("started with chatko")
-            try:
-                await chatko(message)
-            except Exception as e:
-                print(e)
-            finally:
-                await message.reply("kal ana kall")
-
-    # passing the message command for other bot commands if not chatko not found
-    await bot.process_commands(message)
-
-
-async def chatko(ctx):
-    if ctx.author.voice and ctx.author.voice.channel:
-        voice_channel = ctx.author.voice.channel
-        for member in voice_channel.members:
-            await member.move_to(None)
 
 async def checkReminders():
     print("Checked reminders.")
@@ -136,7 +110,7 @@ async def checkReminders():
 async def startReminderLoop():
     while True:
         await checkReminders()
-        
+
 @bot.command()
 @commands.check(is_owner)
 async def startRemindLoop(ctx):
@@ -150,6 +124,7 @@ async def info_error(ctx, error):
     if isinstance(error, commands.BadArgument):
         await ctx.send("Error starting reminder loop")
 
+
 async def createReminder(user, channelId, remindTime, text):
     newReminder = {
         "userId": user,
@@ -158,47 +133,49 @@ async def createReminder(user, channelId, remindTime, text):
         "text": text,
     }
     reminderCollection.insert_one(newReminder)
-        
-@bot.command()
-async def timer(ctx, *, message: str):
-        """Sets a reminder for the specified time.
-        Usage: k! timer <Remind Time> <Reminder Text>
-        eg. k!timer 1d 2h 3m 4s to touch grass
-        """
-        print("=================================================")
-        print(message, type(message))
-        givenMessage = "".join(message)
 
-        reminderDetails = extractReminderDetails(givenMessage)
-        print(
-            f"givenTime: {reminderDetails['givenTime']} remindTime: {reminderDetails['remindTime']} string: {reminderDetails['text']}"
-        )
-        givenTime = reminderDetails["givenTime"]
-        # print(reminderDetails["givenTime"])
-        # print(reminderDetails["remindTime"])
-        # print(reminderDetails["text"])
-        remindTime = int(reminderDetails["remindTime"])
-        text = reminderDetails["text"]
-        user = ctx.author.id
-        channelId = ctx.channel.id
-        try:
-            if givenTime == 0:
-                await ctx.send(
-                    "Please enter a valid time or use k!help remind for help on this command."
-                )
-            else:
-                await createReminder(user, channelId, remindTime, text)
-                # await ctx.channel.send("Reminder added successfully")
-                await ctx.send(
-                    f"Reminder set for <t:{remindTime}:f>. I will notify you in <t:{remindTime}:R>."
-                )
-        except Exception as e:
-            # logging.error(f"An error occurred: {e}")
+
+@bot.command(aliases=["reminder, remind"])
+async def timer(ctx, *, message: str):
+    """Sets a reminder for the specified time.
+    Usage: k! timer <Remind Time> <Reminder Text>
+    eg. k!timer 1d 2h 3m 4s to touch grass
+    """
+    print("=================================================")
+    print(message, type(message))
+    givenMessage = "".join(message)
+
+    reminderDetails = extractReminderDetails(givenMessage)
+    print(
+        f"givenTime: {reminderDetails['givenTime']} remindTime: {reminderDetails['remindTime']} string: {reminderDetails['text']}"
+    )
+    givenTime = reminderDetails["givenTime"]
+    # print(reminderDetails["givenTime"])
+    # print(reminderDetails["remindTime"])
+    # print(reminderDetails["text"])
+    remindTime = int(reminderDetails["remindTime"])
+    text = reminderDetails["text"]
+    user = ctx.author.id
+    channelId = ctx.channel.id
+    try:
+        if givenTime == 0:
             await ctx.send(
-                "An error occurred while setting the reminder. Please try again later."
+                "Please enter a valid time or use k!help remind for help on this command."
             )
-        print(f"{reminderCollection.count_documents({})} done!")
-        
+        else:
+            await createReminder(user, channelId, remindTime, text)
+            # await ctx.channel.send("Reminder added successfully")
+            await ctx.send(
+                f"Reminder set for <t:{remindTime}:f>. I will notify you in <t:{remindTime}:R>."
+            )
+    except Exception as e:
+        # logging.error(f"An error occurred: {e}")
+        await ctx.send(
+            "An error occurred while setting the reminder. Please try again later."
+        )
+    print(f"{reminderCollection.count_documents({})} done!")
+
+
 @bot.command(hidden=True)
 @is_in_guild(607520631944118292)
 async def delReminders(ctx):
@@ -209,7 +186,6 @@ async def delReminders(ctx):
         await ctx.send("Deleted all completed reminders")
         await ctx.send("Reminders Count: ", reminderCollection.count_documents({}))
     except Exception as e:
-        # logging.error(e)
         print(e)
 
 # FIXME: doesnt work properly || only removes from the cache || use database for it!!
@@ -241,7 +217,6 @@ async def test(ctx, *, message):
 
 # Slash command to check info of a user
 @bot.hybrid_group(fallback="enter")
-# @bot.hybrid_command()
 async def tag(message, member: discord.Member):
     """
     Displays the info of the user: the joining date and their current avatar
@@ -256,20 +231,6 @@ async def tag(message, member: discord.Member):
 async def tag_error(ctx, error):
     if isinstance(error, commands.BadArgument):
         await ctx.send("I could not find that member...")
-
-
-@bot.command(hidden=True)
-@commands.check(is_owner)
-async def add(ctx, *, message):
-    message = "".join(message)
-    watchlist.append(message)
-    await ctx.send(f"added: `{message}` to the watchlist")
-
-
-@bot.command()
-@commands.check(is_owner)
-async def display(ctx):
-    await ctx.send(watchlist)
 
 
 # current time
@@ -374,61 +335,9 @@ async def embed(
     await ctx.send(content, embed=embed, tts=False)
 
 
-# [kokose: 418364415856082954, bisskut 757478713402064996]
-isallowed = False
-
-
-@bot.command(hidden=True)
-@commands.check(is_owner)
-async def toggleburrman(ctx):
-    global isallowed
-    isallowed = not isallowed
-    print(isallowed)
-    await ctx.send(isallowed)
-
-
-@bot.command(hidden=True)
-@commands.check(is_owner)
-async def currentstatus(ctx):
-    global isallowed
-    await ctx.send(isallowed)
-
-
-@bot.event
-async def on_voice_state_update(member, before, after):
-    def should_kick():
-        if member.id in burrman:
-            if isallowed:
-                return False
-            if member.is_on_mobile():
-                return True
-            if member.status == discord.Status.offline:
-                # print(member, " ", member.status, "\n", discord.Status.offline, "fired!!!!!!")
-                return True
-        return False
-
-    if should_kick():
-        await member.move_to(None)
-        print(f"{member} was disconnected from the voice channel on mobile.")
-
-    if should_kick() and member.voice.channel:
-        await bot.get_channel(992455714662514851).send(
-            f"{member} was disconnected from the voice channel on mobile.",
-            delete_after=5,
-        )
-
+# EVENTS 
 
 # @bot.event
-# async def on_error(event, *args, **kwargs):
-#     print("on_error called")
-#     channel = bot.get_channel(1139802368024784946)
-#     print(channel)
-#     await bot.get_channel(1139802368024784946).send(
-#         f"Error: EVENT: {event}\nARGS: {args}\nKWARGS: {kwargs}"
-#     )
-
-
-@bot.event
 async def on_command_error(ctx, error):
     print("oncommanderror called", error)
     channel = ctx.channel.id
@@ -437,7 +346,6 @@ async def on_command_error(ctx, error):
     )
 
 
-@bot.event
 async def on_command_completion(ctx):
     print("on command completion called")
     channel = ctx.channel.id
@@ -448,24 +356,22 @@ async def on_command_completion(ctx):
 
 
 # ============================================================================================================================
-# try:
-#     bot.run(TOKEN)
-# except discord.HTTPException as e:
-#     if e.status == 429:
-#         print("The Discord servers denied the connection for making too many requests")
-#     else:
-#         raise e
 
+
+EVENTS = [on_command_error, on_command_completion, on_message]
+def add_events():
+    for event in EVENTS:
+        bot.add_listener(event)
 
 async def main():
     async with bot:
+        add_events()
         await add_cogs(bot)
         await bot.start(TOKEN, reconnect=True)
 
 
 try:
     asyncio.run(main())
-    # bot.run(TOKEN, reconnect=True)
 except discord.HTTPException as e:
     if e.status == 429:
         print("The Discord servers denied the connection for making too many requests")
