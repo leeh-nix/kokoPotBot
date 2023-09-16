@@ -4,21 +4,21 @@ import datetime
 
 pattern = re.compile(
     r"""
-    \s?
+    ^\s*[reminder for]*
     ((?P<days>\d{1,3})\s*(d(ays?)?)\s)?
     ((?P<hours>\d{1,3})\s*(h(ours?)?(rs?)?)\s)?
     ((?P<minutes>\d{1,3})\s*(m(inutes?)?(ins?)?)\s)?
     ((?P<seconds>\d{1,3})\s*(s(econds?)?(ecs?)?))?
     (?P<msg>.*)
     """,
-    re.MULTILINE | re.IGNORECASE | re.VERBOSE | re.DOTALL,
+    re.MULTILINE | re.IGNORECASE | re.VERBOSE | re.DOTALL | re.X,
 )
 
 
 def extractReminderDetails(message: str):
-    # text = pattern.sub("", message).strip().replace("me to", "", 1).rstrip("in")
-    # print(f"text: {text}")
-    print(f"message: {message}")
+    print("##################################\n")
+    print(f"MeSsAgE: {message}")
+    print("\n##################################")
     matchFound = pattern.search(message)
     # print("matchFound: ", matchFound)
 

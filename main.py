@@ -1,5 +1,6 @@
 import datetime
 import io
+import re
 import discord
 from discord.ext import commands
 from discord.ext.commands import check
@@ -10,7 +11,7 @@ from typing import Literal, Optional
 # import typing
 from cogs.reminder import reminderCollection
 
-from commissions.commissions_event_handler import on_message
+from commissions.commissions_event_handler import chatko
 
 from functions.extractReminderDetails import extractReminderDetails
 from functions.imageTransform import imageTransform
@@ -111,6 +112,7 @@ async def startReminderLoop():
     while True:
         await checkReminders()
 
+
 @bot.command()
 @commands.check(is_owner)
 async def startRemindLoop(ctx):
@@ -143,9 +145,14 @@ async def timer(ctx, *, message: str):
     """
     print("=================================================")
     print(message, type(message))
-    givenMessage = "".join(message)
+    remove_prefix_pattern = r"(?:reminder(?: for)?)\s+(.+)"
+    matched = re.search(remove_prefix_pattern, message, re.IGNORECASE)
+    message = matched.group(1)
+    givenMessage = message
+    print("givenMessage", givenMessage)
 
     reminderDetails = extractReminderDetails(givenMessage)
+
     print(
         f"givenTime: {reminderDetails['givenTime']} remindTime: {reminderDetails['remindTime']} string: {reminderDetails['text']}"
     )
@@ -169,7 +176,6 @@ async def timer(ctx, *, message: str):
                 f"Reminder set for <t:{remindTime}:f>. I will notify you in <t:{remindTime}:R>."
             )
     except Exception as e:
-        # logging.error(f"An error occurred: {e}")
         await ctx.send(
             "An error occurred while setting the reminder. Please try again later."
         )
@@ -187,6 +193,7 @@ async def delReminders(ctx):
         await ctx.send("Reminders Count: ", reminderCollection.count_documents({}))
     except Exception as e:
         print(e)
+
 
 # FIXME: doesnt work properly || only removes from the cache || use database for it!!
 # @bot.command(hidden=True)
@@ -335,7 +342,8 @@ async def embed(
     await ctx.send(content, embed=embed, tts=False)
 
 
-# EVENTS 
+# EVENTS
+
 
 # @bot.event
 async def on_command_error(ctx, error):
@@ -355,13 +363,53 @@ async def on_command_completion(ctx):
     )
 
 
+async def on_message(msg):
+    member = msg.author
+    content: str = msg.content
+    if content.startswith("reminder for ") or content.startswith("reminder"):
+        try:
+            print("ON_MESSAGE REMINDER INVOKED")
+
+            timer_command = bot.get_command("timer")
+            if timer_command:
+                modified_ctx = await bot.get_context(msg)
+                await timer_command.invoke(modified_ctx)
+        except Exception as e:
+            print(member.name)
+            print(e)
+    if (
+        member.id in burrman
+        and member.is_on_mobile()
+        and not member.desktop_status == "invisible"
+    ):
+        print("started with mobile")
+        await msg.channel.send("typing from mobile eww")
+        await msg.channel.send(f"# {member.mention} **PC SE AO** 🤢 🤮 ")
+    if member.id in owners.values():
+        if msg.content.lower().startswith("chatko"):
+            print("started with chatko")
+            try:
+                await chatko(msg)
+                print("chatko")
+            except Exception as e:
+                print(e, member.name)
+            finally:
+                await msg.reply("kal ana kall")
+
+    # passing the message command for other bot commands if not chatko not found
+    await bot.process_commands(msg)
+
+
 # ============================================================================================================================
 
 
 EVENTS = [on_command_error, on_command_completion, on_message]
+
+
 def add_events():
     for event in EVENTS:
         bot.add_listener(event)
+
 
 async def main():
     async with bot:

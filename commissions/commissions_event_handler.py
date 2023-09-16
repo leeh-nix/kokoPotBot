@@ -32,27 +32,3 @@ class MoshiMoshi(commands.Cog):
     async def currentstatus(self, ctx):
         global isallowed
         await ctx.send(isallowed)
-
-async def on_message(message):
-    member = message.author
-    if (
-        member.id in burrman
-        and member.is_on_mobile()
-        and not member.desktop_status == "invisible"
-    ):
-        print("started with mobile")
-        await message.channel.send("typing from mobile eww")
-        await message.channel.send(f"# {member.mention} **PC SE AO** 🤢 🤮 ")
-    if member.id in owners.values():
-        if message.content.lower().startswith("chatko"):
-            print("started with chatko")
-            try:
-                await chatko(message)
-                print("chatko")
-            except Exception as e:
-                print(e)
-            finally:
-                await message.reply("kal ana kall")
-
-    # passing the message command for other bot commands if not chatko not found
-    # await bot.process_commands(message)
