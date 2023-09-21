@@ -46,6 +46,7 @@ owners = {
     "sakura": 413155474800902154,
     "riley": 911968173606195250,
     "marteeen": 840584597472936006,
+    "marteeen_new": 1152840208635670528,
 }
 burrman = [758978243842801669]
 
@@ -345,7 +346,6 @@ async def embed(
 # EVENTS
 
 
-# @bot.event
 async def on_command_error(ctx, error):
     print("oncommanderror called", error)
     channel = ctx.channel.id
@@ -394,10 +394,10 @@ async def on_message(msg):
             except Exception as e:
                 print(e, member.name)
             finally:
-                await msg.reply("kal ana kall")
+                await msg.send("# chatko sb ke sb jaldi wha se hto ")
 
     # passing the message command for other bot commands if not chatko not found
-    await bot.process_commands(msg)
+    # await bot.process_commands(msg)
 
 
 # ============================================================================================================================

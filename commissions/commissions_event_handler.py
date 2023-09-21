@@ -13,6 +13,7 @@ async def chatko(ctx):
         voice_channel = ctx.author.voice.channel
         for member in voice_channel.members:
             await member.move_to(None)
+            await ctx.send(f"{member.mention} kal ana kall")
 
 
 class MoshiMoshi(commands.Cog):
