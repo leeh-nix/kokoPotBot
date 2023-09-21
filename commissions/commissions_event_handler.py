@@ -8,12 +8,12 @@ burrman = [758978243842801669]
 isallowed = False
 
 
-async def chatko(ctx):
+async def chatko(ctx, modified_ctx):
     if ctx.author.voice and ctx.author.voice.channel:
         voice_channel = ctx.author.voice.channel
         for member in voice_channel.members:
+            await modified_ctx.send(f"{member.mention} kal ana kall")
             await member.move_to(None)
-            await ctx.send(f"{member.mention} kal ana kall")
 
 
 class MoshiMoshi(commands.Cog):

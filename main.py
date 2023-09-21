@@ -366,13 +366,13 @@ async def on_command_completion(ctx):
 async def on_message(msg):
     member = msg.author
     content: str = msg.content
+    modified_ctx = await bot.get_context(msg)
     if content.startswith("reminder for ") or content.startswith("reminder"):
         try:
             print("ON_MESSAGE REMINDER INVOKED")
 
             timer_command = bot.get_command("timer")
             if timer_command:
-                modified_ctx = await bot.get_context(msg)
                 await timer_command.invoke(modified_ctx)
         except Exception as e:
             print(member.name)
@@ -389,12 +389,12 @@ async def on_message(msg):
         if msg.content.lower().startswith("chatko"):
             print("started with chatko")
             try:
-                await chatko(msg)
+                await chatko(msg, modified_ctx)
                 print("chatko")
             except Exception as e:
                 print(e, member.name)
             finally:
-                await msg.send("# chatko sb ke sb jaldi wha se hto ")
+                await msg.reply("# chatko sb ke sb jaldi wha se hto ")
 
     # passing the message command for other bot commands if not chatko not found
     # await bot.process_commands(msg)
