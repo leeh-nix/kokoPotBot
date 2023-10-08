@@ -3,7 +3,6 @@ from discord.ext import commands
 from typing import Literal, Optional
 
 
-# FIXME: make it print the command which got synced
 class Sync(commands.Cog):
     def __init__(self, bot):
         self.bot = bot

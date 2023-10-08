@@ -10,7 +10,7 @@ from typing import Literal, Optional
 
 # import typing
 from cogs.reminder import reminderCollection
-
+from cogs.nesoReminder import NesoReminder
 from commissions.commissions_event_handler import chatko
 
 from functions.extractReminderDetails import extractReminderDetails
@@ -76,6 +76,8 @@ MoshiMoshi: discord.Guild.id = 852092404604469278
 async def on_ready():
     print("We have logged in as {0.user}".format(bot))
     await startReminderLoop()
+    neso = NesoReminder(bot)
+    neso.start_reminder_loop()
 
 
 async def checkReminders():
@@ -394,7 +396,7 @@ async def on_message(msg):
             except Exception as e:
                 print(e, member.name)
             finally:
-                await msg.reply("# chatko sb ke sb jaldi wha se hto ")
+                await msg.reply("# get out and uninstall valo... 👈🤓")
 
     # passing the message command for other bot commands if not chatko not found
     # await bot.process_commands(msg)
