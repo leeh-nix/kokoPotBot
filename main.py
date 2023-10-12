@@ -3,7 +3,8 @@ import io
 import json
 import re
 import discord
-from discord.ext import commands, tasks
+from discord.ext import commands
+from discord.ext import tasks as dc_task
 from discord.ext.commands import check
 import dotenv
 import os
@@ -13,16 +14,14 @@ import requests
 
 # import typing
 from cogs.reminder import reminderCollection
-from cogs.nesoReminder import NesoReminder
 from commissions.commissions_event_handler import chatko
 
 from functions.extractReminderDetails import extractReminderDetails
 from functions.imageTransform import imageTransform
-from functions.konachanImgExtractor import konachanImgExtractor
 from functions.checks import is_owner, is_in_guild
 
 from commandLoader import add_cogs
-import asyncio
+from asyncio import run, sleep
 import tracemalloc
 
 
@@ -31,6 +30,7 @@ dotenv.load_dotenv()
 TOKEN = os.getenv("TOKEN")
 URI = os.getenv("URI")
 URL_ENDPOINT = os.getenv("URL_ENDPOINT")
+YOUTUBE_API_KEY = os.getenv("YOUTUBE_API_KEY")
 
 
 intents = discord.Intents.all()
@@ -78,12 +78,8 @@ MoshiMoshi: discord.Guild.id = 852092404604469278
 @bot.event
 async def on_ready():
     print("We have logged in as {0.user}".format(bot))
-    # send_message.start()
-@bot.event
-async def setup_hook():
-    await startReminderLoop()
-    send_message.start()
-
+    await startyoutubeloop()
+    # await startReminderLoop()
 
 async def checkReminders():
     print("Checked reminders.")
@@ -113,22 +109,36 @@ async def checkReminders():
         # print("Checked reminders.")
 
         # Wait for a specific remindTime before checking again (e.g., 1 second)
-        await asyncio.sleep(1)
-
-async def nesoremind():
-    pass
+        await sleep(1)
 
 async def startReminderLoop():
     while True:
         await checkReminders()
-        await nesoremind()
 
+async def startyoutube():
+    print("YOUTUBAFNCAKJNDECAWEJCWJCJWOWJ")
+    webhook_url = "https://discord.com/api/webhooks/1147769540864917554/PYrBBYxJg7ers54b6Tj4WmdUegYPNPKUQjKGx9w480cOBeFWy8twR7-mtPkGwVJRHNjp"
+    for channel_name, channel_id in youtube_channel_ids.items():
+        response = requests.get(f"https://www.googleapis.com/youtube/v3/search?part=snippet&channelId={channel_id}&order=date&maxResults=1&key={YOUTUBE_API_KEY}")
+        
+        data = json.loads(response.content)
+        video_id = data["items"][0]["id"]["videoId"]
+        
+        # try:
+        send_message(webhook_url, f"https://www.youtube.com/watch?v={video_id}")
+        # except Exception as e:
+            # print(e)
+        await sleep(1)
+async def startyoutubeloop():
+    # while True:
+    await startyoutube()
+    # await checkReminders()
 
 @bot.command()
 @commands.check(is_owner)
 async def startRemindLoop(ctx):
-    await startReminderLoop()
     await ctx.send("Reminder loop started")
+    await startReminderLoop()
     print("startReminderLoop")
 
 
@@ -148,11 +158,11 @@ async def createReminder(user, channelId, remindTime, text):
     reminderCollection.insert_one(newReminder)
 
 
-@bot.command(aliases=["reminder, remind"])
+# @bot.command(aliases=["reminder, remind"])
+@bot.command()
 async def timer(ctx, *, message: str):
     """Sets a reminder for the specified time.
-    Usage: k!timer <Remind Time> <Reminder Text> 
-        OR  reminder for <Reminder Time> <Reminder Text>
+    Usage: reminder for <Reminder Time> <Reminder Text>
     eg. k!timer 1d 2h 3m 4s to touch grass
     """
     print("=================================================")
@@ -374,7 +384,6 @@ async def on_command_completion(ctx):
     )
 
 
-YOUTUBE_API_KEY = os.getenv("YOUTUBE_API_KEY")
 
 youtube_channel_ids = {
     "penguinz0": "UCq6VFHwMzcMXbuKyG7SQYIg",
@@ -386,26 +395,48 @@ youtube_channel_ids = {
     "Sourav Joshi Vlogs": "UCjvgGbPPn-FgYeguc5nxG4A",
 }
 
-@tasks.loop(seconds=10)
-async def send_message(webhook_url, message):
-    webhook_url = "https://discord.com/api/webhooks/1147769540864917554/PYrBBYxJg7ers54b6Tj4WmdUegYPNPKUQjKGx9w480cOBeFWy8twR7-mtPkGwVJRHNjp"
+# @dc_task.loop(seconds=1, count=5)
+# async def testing():
+#     try:
+#         botPotTest = 1048553311768420363
+#         channel = bot.get_channel(botPotTest)
+#         if channel:
+#             print(channel)
+#             await channel.send("EVENT FIRED!!")
+#         else:
+#             print("bitch mf its all his fault")
+#     except  :
+#         print("some error")
+def send_message(webhook_url, message):
     botpottest = 1048553311768420363
-    
     print("EVENT FIRED!!")
-    await bot.get_channel(botpottest).send("EVENT FIRED!!")
+    # await bot.get_channel(botpottest).send("EVENT FIRED!!")
     
     payload = {"content": message}
     headers = {"Content-Type": "application/json"}
-    requests.post(webhook_url, data=json.dumps(payload), headers=headers)
+    response = requests.post(webhook_url, data=json.dumps(payload), headers=headers)
+    return response
 
-    for channel_name, channel_id in youtube_channel_ids.items():
-        response = requests.get(f"https://www.googleapis.com/youtube/v3/search?part=snippet&channelId={channel_id}&order=date&maxResults=1&key={YOUTUBE_API_KEY}")
+#FIXME:try using it by adding it inside a commands.Cog and create a command 
+# can take reference from the api reference!
+# so bot started but is not responding after checked reminders print statement
+# @dc_task.loop(seconds=10, reconnect=True)
+# async def youtube():
+#     print("YOUTUBAFNCAKJNDECAWEJCWJCJWOWJ")
+#     webhook_url = "https://discord.com/api/webhooks/1147769540864917554/PYrBBYxJg7ers54b6Tj4WmdUegYPNPKUQjKGx9w480cOBeFWy8twR7-mtPkGwVJRHNjp"
+#     for channel_name, channel_id in youtube_channel_ids.items():
+#         response = requests.get(f"https://www.googleapis.com/youtube/v3/search?part=snippet&channelId={channel_id}&order=date&maxResults=1&key={YOUTUBE_API_KEY}")
         
-        data = json.loads(response.content)
-        video_id = data["items"][0]["id"]["videoId"]
+#         data = json.loads(response.content)
+#         video_id = data["items"][0]["id"]["videoId"]
         
-        send_message(webhook_url, f"https://www.youtube.com/watch?v={video_id}")
-
+#         # try:
+#         send_message(webhook_url, f"https://www.youtube.com/watch?v={video_id}")
+#         # except Exception as e:
+#             # print(e)
+#     await sleep(1)
+            
+# another approach save the video link and check the 0th element and match with the link if its a # new link then post it 
 async def on_message(msg):
     member = msg.author
     content: str = msg.content
@@ -462,7 +493,7 @@ async def main():
 
 
 try:
-    asyncio.run(main())
+    run(main())
 except discord.HTTPException as e:
     if e.status == 429:
         print("The Discord servers denied the connection for making too many requests")
