@@ -3,7 +3,7 @@ import io
 import json
 import re
 import discord
-from discord.ext import commands
+from discord.ext import commands, tasks
 from discord.ext.commands import check
 import dotenv
 import os
@@ -78,9 +78,11 @@ MoshiMoshi: discord.Guild.id = 852092404604469278
 @bot.event
 async def on_ready():
     print("We have logged in as {0.user}".format(bot))
+    # send_message.start()
+@bot.event
+async def setup_hook():
     await startReminderLoop()
-    neso = NesoReminder(bot)
-    neso.start_reminder_loop()
+    send_message.start()
 
 
 async def checkReminders():
@@ -149,7 +151,8 @@ async def createReminder(user, channelId, remindTime, text):
 @bot.command(aliases=["reminder, remind"])
 async def timer(ctx, *, message: str):
     """Sets a reminder for the specified time.
-    Usage: k! timer <Remind Time> <Reminder Text>
+    Usage: k!timer <Remind Time> <Reminder Text> 
+        OR  reminder for <Reminder Time> <Reminder Text>
     eg. k!timer 1d 2h 3m 4s to touch grass
     """
     print("=================================================")
@@ -383,23 +386,25 @@ youtube_channel_ids = {
     "Sourav Joshi Vlogs": "UCjvgGbPPn-FgYeguc5nxG4A",
 }
 
-@bot.event
+@tasks.loop(seconds=10)
 async def send_message(webhook_url, message):
+    webhook_url = "https://discord.com/api/webhooks/1147769540864917554/PYrBBYxJg7ers54b6Tj4WmdUegYPNPKUQjKGx9w480cOBeFWy8twR7-mtPkGwVJRHNjp"
+    botpottest = 1048553311768420363
+    
+    print("EVENT FIRED!!")
+    await bot.get_channel(botpottest).send("EVENT FIRED!!")
+    
     payload = {"content": message}
     headers = {"Content-Type": "application/json"}
     requests.post(webhook_url, data=json.dumps(payload), headers=headers)
 
-    while True:
-        for channel_name, channel_id in youtube_channel_ids.items():
-            response = requests.get(f"https://www.googleapis.com/youtube/v3/search?part=snippet&channelId={channel_id}&order=date&maxResults=1&key={YOUTUBE_API_KEY}")
-            data = json.loads(response.content)
-            video_id = data["items"][0]["id"]["videoId"]
-            webhook_url = "https://discord.com/api/webhooks/1147769540864917554/PYrBBYxJg7ers54b6Tj4WmdUegYPNPKUQjKGx9w480cOBeFWy8twR7-mtPkGwVJRHNjp"
-            # Send a message to the Discord webhook with the YouTube video link
-            send_message(webhook_url, f"https://www.youtube.com/watch?v={video_id}")
-
-        # Wait for 10 seconds before checking again
-        time.sleep(10)
+    for channel_name, channel_id in youtube_channel_ids.items():
+        response = requests.get(f"https://www.googleapis.com/youtube/v3/search?part=snippet&channelId={channel_id}&order=date&maxResults=1&key={YOUTUBE_API_KEY}")
+        
+        data = json.loads(response.content)
+        video_id = data["items"][0]["id"]["videoId"]
+        
+        send_message(webhook_url, f"https://www.youtube.com/watch?v={video_id}")
 
 async def on_message(msg):
     member = msg.author
