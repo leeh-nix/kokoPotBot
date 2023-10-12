@@ -1,5 +1,6 @@
 import datetime
 import io
+import json
 import re
 import discord
 from discord.ext import commands
@@ -7,6 +8,8 @@ from discord.ext.commands import check
 import dotenv
 import os
 from typing import Literal, Optional
+
+import requests
 
 # import typing
 from cogs.reminder import reminderCollection
@@ -110,10 +113,13 @@ async def checkReminders():
         # Wait for a specific remindTime before checking again (e.g., 1 second)
         await asyncio.sleep(1)
 
+async def nesoremind():
+    pass
 
 async def startReminderLoop():
     while True:
         await checkReminders()
+        await nesoremind()
 
 
 @bot.command()
@@ -364,6 +370,36 @@ async def on_command_completion(ctx):
         suppress_embeds=True,
     )
 
+
+YOUTUBE_API_KEY = os.getenv("YOUTUBE_API_KEY")
+
+youtube_channel_ids = {
+    "penguinz0": "UCq6VFHwMzcMXbuKyG7SQYIg",
+    "KBS WORLD TV": "UC5BMQOsAB8hKUyHu9KI6yig",
+    "gameranx": "UCNvzD7Z-g64bPXxGzaQaa4g",
+    "Mumbiker Nikil": "UCNn6AaHharXIbkRleXGboiQ",
+    "FlyingBeast320": "UCNSdjX4ry9fICqeObdZPAZQ",
+    "GauravChoudharyOfficial": "UCXsXitjiT_8qPgNEFGPVfBA",
+    "Sourav Joshi Vlogs": "UCjvgGbPPn-FgYeguc5nxG4A",
+}
+
+@bot.event
+async def send_message(webhook_url, message):
+    payload = {"content": message}
+    headers = {"Content-Type": "application/json"}
+    requests.post(webhook_url, data=json.dumps(payload), headers=headers)
+
+    while True:
+        for channel_name, channel_id in youtube_channel_ids.items():
+            response = requests.get(f"https://www.googleapis.com/youtube/v3/search?part=snippet&channelId={channel_id}&order=date&maxResults=1&key={YOUTUBE_API_KEY}")
+            data = json.loads(response.content)
+            video_id = data["items"][0]["id"]["videoId"]
+            webhook_url = "https://discord.com/api/webhooks/1147769540864917554/PYrBBYxJg7ers54b6Tj4WmdUegYPNPKUQjKGx9w480cOBeFWy8twR7-mtPkGwVJRHNjp"
+            # Send a message to the Discord webhook with the YouTube video link
+            send_message(webhook_url, f"https://www.youtube.com/watch?v={video_id}")
+
+        # Wait for 10 seconds before checking again
+        time.sleep(10)
 
 async def on_message(msg):
     member = msg.author
