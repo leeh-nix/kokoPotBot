@@ -1,19 +1,14 @@
 import datetime
 import io
-import json
 import re
 import discord
 from discord.ext import commands
-from discord.ext import tasks as dc_task
-from discord.ext.commands import check
 import dotenv
 import os
 from typing import Literal, Optional
+# from discord.ext.commands import check
 
-import requests
-
-# import typing
-from cogs.reminder import reminderCollection
+from cogs.reminder import reminderCollection, createReminder
 from commissions.commissions_event_handler import chatko
 
 from functions.extractReminderDetails import extractReminderDetails
@@ -30,7 +25,6 @@ dotenv.load_dotenv()
 TOKEN = os.getenv("TOKEN")
 URI = os.getenv("URI")
 URL_ENDPOINT = os.getenv("URL_ENDPOINT")
-YOUTUBE_API_KEY = os.getenv("YOUTUBE_API_KEY")
 
 
 intents = discord.Intents.all()
@@ -42,7 +36,7 @@ gods = {
     "kuroko": 418364415856082954,
     "sakura": 413155474800902154,
 }
-# koksie, marteeen,
+
 owners = {
     "kuroko": 418364415856082954,
     "bisskut": 757478713402064996,
@@ -78,8 +72,7 @@ MoshiMoshi: discord.Guild.id = 852092404604469278
 @bot.event
 async def on_ready():
     print("We have logged in as {0.user}".format(bot))
-    await startyoutubeloop()
-    # await startReminderLoop()
+    await startReminderLoop()
 
 async def checkReminders():
     print("Checked reminders.")
@@ -95,19 +88,14 @@ async def checkReminders():
             userId = reminder["userId"]
             channel = reminder["channelId"]
 
-            # Do something with the reminder, e.g., send a message to the member
             if remindTime == currentTime:
                 await bot.get_channel(channel).send(
                     f"<@{userId}>, here's your reminder: {text}"
                 )
                 reminderCollection.delete_one({"userID": userId})
-
             # elif remindTime < currentTime:
-
         # Remove the reminder from the collection after processing
-
         # print("Checked reminders.")
-
         # Wait for a specific remindTime before checking again (e.g., 1 second)
         await sleep(1)
 
@@ -115,26 +103,8 @@ async def startReminderLoop():
     while True:
         await checkReminders()
 
-async def startyoutube():
-    print("YOUTUBAFNCAKJNDECAWEJCWJCJWOWJ")
-    webhook_url = "https://discord.com/api/webhooks/1147769540864917554/PYrBBYxJg7ers54b6Tj4WmdUegYPNPKUQjKGx9w480cOBeFWy8twR7-mtPkGwVJRHNjp"
-    for channel_name, channel_id in youtube_channel_ids.items():
-        response = requests.get(f"https://www.googleapis.com/youtube/v3/search?part=snippet&channelId={channel_id}&order=date&maxResults=1&key={YOUTUBE_API_KEY}")
-        
-        data = json.loads(response.content)
-        video_id = data["items"][0]["id"]["videoId"]
-        
-        # try:
-        send_message(webhook_url, f"https://www.youtube.com/watch?v={video_id}")
-        # except Exception as e:
-            # print(e)
-        await sleep(1)
-async def startyoutubeloop():
-    # while True:
-    await startyoutube()
-    # await checkReminders()
 
-@bot.command()
+@bot.command(hidden=True)
 @commands.check(is_owner)
 async def startRemindLoop(ctx):
     await ctx.send("Reminder loop started")
@@ -148,17 +118,6 @@ async def info_error(ctx, error):
         await ctx.send("Error starting reminder loop")
 
 
-async def createReminder(user, channelId, remindTime, text):
-    newReminder = {
-        "userId": user,
-        "channelId": channelId,
-        "remindTime": remindTime,
-        "text": text,
-    }
-    reminderCollection.insert_one(newReminder)
-
-
-# @bot.command(aliases=["reminder, remind"])
 @bot.command()
 async def timer(ctx, *, message: str):
     """Sets a reminder for the specified time.
@@ -217,21 +176,6 @@ async def delReminders(ctx):
         print(e)
 
 
-# FIXME: doesnt work properly || only removes from the cache || use database for it!!
-# @bot.command(hidden=True)
-# # @commands.check(is_owner)
-# async def removeOwner(ctx, member):
-#     """Add a member to the owners list"""
-#     if ctx.author.id in gods.values():
-#         owners.__delitem__(member)
-#     await ctx.send(f"```py\n{owners}```")
-
-
-# @bot.command(hidden=True)
-# async def displayOwners(ctx):
-#     await ctx.send(f"```py\n{owners}```")
-
-
 @bot.command(hidden=True)
 @commands.check(is_owner)
 async def test(ctx, *, message):
@@ -243,7 +187,6 @@ async def test(ctx, *, message):
 
 # Commands start from here
 
-
 # Slash command to check info of a user
 @bot.hybrid_group(fallback="enter")
 async def tag(message, member: discord.Member):
@@ -252,8 +195,7 @@ async def tag(message, member: discord.Member):
     Usage: /tag enter <@user>
     """
     await message.send(
-        f"{member.mention} joined on {member.joined_at} {member.display_avatar}"
-    )
+        f"{member.mention} joined on {member.joined_at} {member.display_avatar}")
 
 
 @tag.error
@@ -302,50 +244,6 @@ async def imageresize(
             await ctx.send(file=discord.File(image_file, "image.png"))
 
 
-@bot.command(hidden=True)
-@commands.check(is_owner)
-async def purge(ctx, amount: int):
-    """Deletes the message of the channel or the member if specified and the amount specified amount
-
-    Args:
-        amount (int): specify the number of message you want to delete
-    """
-    try:
-        deleted = await ctx.channel.purge(limit=amount)
-    except Exception as e:
-        await ctx.send(e)
-    finally:
-        await ctx.channel.send(f"Deleted {len(deleted)} message(s)", delete_after=3)
-
-
-@bot.command(hidden=True, aliases=["del"])
-@commands.check(is_owner)
-async def delete(ctx, amount: int, member: Optional[discord.Member] = None):
-    """Deletes the message of the channel or the member if specified and the amount specified amount
-
-    Args:
-        amount (int): specify the number of message you want to delete
-        member (Optional[discord.Member], optional):  specify the member (Optional).
-    """
-
-    def is_member_message(message):
-        return message.author == member
-
-    deleted = 0
-    try:
-        async for message in ctx.channel.history(limit=None):
-            if is_member_message(message):
-                await message.delete()
-                deleted += 1
-                if deleted >= amount:
-                    break
-    except Exception as e:
-        # print(e)
-        await ctx.send(e, delete_after=3)
-    finally:
-        await ctx.channel.send(f"Deleted {deleted} message(s)", delete_after=3)
-
-
 @bot.hybrid_command()
 async def embed(
     ctx,
@@ -366,7 +264,6 @@ async def embed(
 
 # EVENTS
 
-
 async def on_command_error(ctx, error):
     print("oncommanderror called", error)
     channel = ctx.channel.id
@@ -384,59 +281,6 @@ async def on_command_completion(ctx):
     )
 
 
-
-youtube_channel_ids = {
-    "penguinz0": "UCq6VFHwMzcMXbuKyG7SQYIg",
-    "KBS WORLD TV": "UC5BMQOsAB8hKUyHu9KI6yig",
-    "gameranx": "UCNvzD7Z-g64bPXxGzaQaa4g",
-    "Mumbiker Nikil": "UCNn6AaHharXIbkRleXGboiQ",
-    "FlyingBeast320": "UCNSdjX4ry9fICqeObdZPAZQ",
-    "GauravChoudharyOfficial": "UCXsXitjiT_8qPgNEFGPVfBA",
-    "Sourav Joshi Vlogs": "UCjvgGbPPn-FgYeguc5nxG4A",
-}
-
-# @dc_task.loop(seconds=1, count=5)
-# async def testing():
-#     try:
-#         botPotTest = 1048553311768420363
-#         channel = bot.get_channel(botPotTest)
-#         if channel:
-#             print(channel)
-#             await channel.send("EVENT FIRED!!")
-#         else:
-#             print("bitch mf its all his fault")
-#     except  :
-#         print("some error")
-def send_message(webhook_url, message):
-    botpottest = 1048553311768420363
-    print("EVENT FIRED!!")
-    # await bot.get_channel(botpottest).send("EVENT FIRED!!")
-    
-    payload = {"content": message}
-    headers = {"Content-Type": "application/json"}
-    response = requests.post(webhook_url, data=json.dumps(payload), headers=headers)
-    return response
-
-#FIXME:try using it by adding it inside a commands.Cog and create a command 
-# can take reference from the api reference!
-# so bot started but is not responding after checked reminders print statement
-# @dc_task.loop(seconds=10, reconnect=True)
-# async def youtube():
-#     print("YOUTUBAFNCAKJNDECAWEJCWJCJWOWJ")
-#     webhook_url = "https://discord.com/api/webhooks/1147769540864917554/PYrBBYxJg7ers54b6Tj4WmdUegYPNPKUQjKGx9w480cOBeFWy8twR7-mtPkGwVJRHNjp"
-#     for channel_name, channel_id in youtube_channel_ids.items():
-#         response = requests.get(f"https://www.googleapis.com/youtube/v3/search?part=snippet&channelId={channel_id}&order=date&maxResults=1&key={YOUTUBE_API_KEY}")
-        
-#         data = json.loads(response.content)
-#         video_id = data["items"][0]["id"]["videoId"]
-        
-#         # try:
-#         send_message(webhook_url, f"https://www.youtube.com/watch?v={video_id}")
-#         # except Exception as e:
-#             # print(e)
-#     await sleep(1)
-            
-# another approach save the video link and check the 0th element and match with the link if its a # new link then post it 
 async def on_message(msg):
     member = msg.author
     content: str = msg.content

@@ -1,4 +1,3 @@
-# from main import bot
 from functions.checks import *
 
 # from commissions.functions import chatko
