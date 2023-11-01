@@ -1,6 +1,5 @@
-import discord 
+from discord import Member
 from discord.ext import commands
-from typing import Optional
 from functions.checks import is_owner
 class Delete(commands.Cog):
     def __init__(self, bot) -> None:
@@ -23,7 +22,7 @@ class Delete(commands.Cog):
 
     @commands.command(hidden=True, aliases=["del"])
     @commands.check(is_owner)
-    async def delete(self, ctx, amount: int, member):
+    async def delete(self, ctx, amount: int, member: Member):
         """Deletes the provided number of messages of the specified member only.
 
         Args:

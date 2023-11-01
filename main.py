@@ -8,7 +8,7 @@ import os
 from typing import Literal, Optional
 # from discord.ext.commands import check
 
-from cogs.reminder import reminderCollection, createReminder
+from cogs.reminder import *
 from commissions.commissions_event_handler import chatko
 
 from functions.extractReminderDetails import extractReminderDetails
