@@ -6,6 +6,7 @@ from discord.ext import commands
 import dotenv
 import os
 from typing import Literal, Optional
+
 # from discord.ext.commands import check
 
 from cogs.reminder import *
@@ -74,6 +75,7 @@ async def on_ready():
     print("We have logged in as {0.user}".format(bot))
     await startReminderLoop()
 
+
 async def checkReminders():
     print("Checked reminders.")
     while True:
@@ -92,12 +94,13 @@ async def checkReminders():
                 await bot.get_channel(channel).send(
                     f"<@{userId}>, here's your reminder: {text}"
                 )
-                reminderCollection.delete_one({"userID": userId})
-            # elif remindTime < currentTime:
+            # elif currentTime>remindTime:
+                # reminderCollection.delete_one({"userID": userId})
         # Remove the reminder from the collection after processing
         # print("Checked reminders.")
         # Wait for a specific remindTime before checking again (e.g., 1 second)
         await sleep(1)
+
 
 async def startReminderLoop():
     while True:
@@ -122,8 +125,8 @@ async def info_error(ctx, error):
 async def timer(ctx, *, message: str):
     """Sets a reminder for the specified time.
     Usage: reminder for <Reminder Time> <Reminder Text>
-    eg. k!timer 1d 2h 3m 4s to touch grass
     """
+    # eg. k!timer 1d 2h 3m 4s to touch grass
     print("=================================================")
     print(message, type(message))
     remove_prefix_pattern = r"(?:reminder(?: for)?)\s+(.+)"
@@ -152,15 +155,45 @@ async def timer(ctx, *, message: str):
             )
         else:
             await createReminder(user, channelId, remindTime, text)
-            # await ctx.channel.send("Reminder added successfully")
             await ctx.send(
                 f"Reminder set for <t:{remindTime}:f>. I will notify you in <t:{remindTime}:R>."
             )
     except Exception as e:
         await ctx.send(
-            "An error occurred while setting the reminder. Please try again later."
+            f"An error occurred while setting the reminder. Please try again later. ||ERROR : {e}||"
         )
     print(f"{reminderCollection.count_documents({})} done!")
+
+
+@bot.hybrid_command()
+async def getreminders(ctx):
+    """Gets all reminders."""
+    id = ctx.author.id
+    name = ctx.author.name
+    print("get reminders for: ", name)
+    description = ""
+    currentTime = datetime.datetime.now().timestamp() // 1
+    counter = 0
+    try:
+        reminders = reminderCollection.find({"userId": id})
+        for reminder in reminders:
+            if currentTime < reminder["remindTime"]:
+                description += f'"<t:{reminder["remindTime"]}:f>" (<t:{reminder["remindTime"]}:R>) : {reminder["text"]}\n'
+                counter +=1
+
+        if description == "":
+            await ctx.send("...what are you looking for? theres nothing here for you.")
+        else:
+            title = name
+            footer = f"Found {counter} reminders"
+            embed = discord.Embed(title=title, description=description)
+            embed.timestamp = datetime.datetime.utcnow()
+            embed.set_thumbnail(url=ctx.author.display_avatar)
+            embed.set_footer(text=footer)
+            await ctx.send(embed=embed, tts=False)
+
+    except Exception as e:
+        print(e)
 
 
 @bot.command(hidden=True)
@@ -170,8 +203,9 @@ async def delReminders(ctx):
     currentTime = datetime.datetime.now().timestamp() // 1
     try:
         reminderCollection.delete_many({"remindTime": {"$lt": currentTime}})
-        await ctx.send("Deleted all completed reminders")
-        await ctx.send("Reminders Count: ", reminderCollection.count_documents({}))
+        await bot.get_channel(955825787599216701).send(
+            f"Deleted all completed reminders\nReminders Count: {reminderCollection.count_documents({})}"
+        )
     except Exception as e:
         print(e)
 
@@ -187,6 +221,7 @@ async def test(ctx, *, message):
 
 # Commands start from here
 
+
 # Slash command to check info of a user
 @bot.hybrid_group(fallback="enter")
 async def tag(message, member: discord.Member):
@@ -195,7 +230,8 @@ async def tag(message, member: discord.Member):
     Usage: /tag enter <@user>
     """
     await message.send(
-        f"{member.mention} joined on {member.joined_at} {member.display_avatar}")
+        f"{member.mention} joined on {member.joined_at} {member.display_avatar}"
+    )
 
 
 @tag.error
@@ -263,6 +299,7 @@ async def embed(
 
 
 # EVENTS
+
 
 async def on_command_error(ctx, error):
     print("oncommanderror called", error)
