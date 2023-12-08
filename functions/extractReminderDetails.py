@@ -16,9 +16,9 @@ pattern = re.compile(
 
 
 def extractReminderDetails(message: str):
-    print("##################################\n")
-    print(f"MeSsAgE: {message}")
-    print("\n##################################")
+    # print("##################################\n")
+    # print(f"MeSsAgE: {message}")
+    # print("\n##################################")
     matchFound = pattern.search(message)
     # print("matchFound: ", matchFound)
 

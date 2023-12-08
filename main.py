@@ -88,14 +88,37 @@ async def checkReminders():
             remindTime = reminder["remindTime"]
             text = reminder["text"]
             userId = reminder["userId"]
-            channel = reminder["channelId"]
+            channelId = reminder["channelId"]
 
+            messageId = str(reminder["messageId"])
+            messageLink = str(reminder["messageLink"])
             if remindTime == currentTime:
-                await bot.get_channel(channel).send(
-                    f"<@{userId}>, here's your reminder: {text}"
-                )
+                print(reminder)
+                channel = bot.get_channel(channelId)
+                print("channel", channel)
+                print("messageId", messageId)
+                try:
+                    message = await channel.fetch_message(messageId)
+                    # interactionMsg = discord.Interaction.original_response(messageId)
+                    # print(interactionMsg)
+
+                    # await (await discord.InteractionMessage.fetch(messageId)).reply(
+                    #     content=f"<@{userId}>, here's your reminder: {text}"
+                    # )
+                    # print("message", message)
+
+                    await message.reply(
+                        content=f"<@{userId}>, here's your reminder: {text}\n{messageLink}"
+                    )
+                except Exception as e:
+                    print(f"An error occurred: {e}")
+
+            # if remindTime == currentTime:
+            #     await bot.get_channel(channelId).send(
+            #         f"<@{userId}>, here's your reminder: {text}"
+            #     )
             # elif currentTime>remindTime:
-                # reminderCollection.delete_one({"userID": userId})
+            # reminderCollection.delete_one({"userID": userId})
         # Remove the reminder from the collection after processing
         # print("Checked reminders.")
         # Wait for a specific remindTime before checking again (e.g., 1 second)
@@ -121,6 +144,59 @@ async def info_error(ctx, error):
         await ctx.send("Error starting reminder loop")
 
 
+@bot.hybrid_command()
+async def reminder(
+    ctx,
+    days: Optional[int] = 0,
+    hours: Optional[int] = 0,
+    minutes: Optional[int] = 0,
+    seconds: int = 0,
+    message: str = "you didn't provide any message",
+):
+    """Sets a reminder for the specified time."""
+    print("Reminder called")
+    print(message, type(message))
+    # Time
+    days = int(days)
+    hours = int(hours)
+    minutes = int(minutes)
+    seconds = int(seconds)
+
+    currentTime = datetime.datetime.now().timestamp() // 1  # float
+    givenTime = (days * 86400) + (hours * 3600) + (minutes * 60) + seconds  # int
+    remindTime = int(currentTime) + int(givenTime)  # int
+
+    print(f"givenTime: {givenTime}, remindTime: {remindTime} string: {message}")
+    text = message
+    userId = ctx.author.id
+    messageId = ctx.message.id
+    guildId = ctx.guild.id
+    channelId = ctx.channel.id
+    messageLink = f"https://discord.com/channels/{guildId}/{channelId}/{messageId}"
+    try:
+        if givenTime == 0:
+            await ctx.send(
+                "Please enter a valid time or use k!help remind for help on this command."
+            )
+        else:
+            await createReminder(
+                userId=userId,
+                channelId=channelId,
+                messageId=messageId,
+                remindTime=remindTime,
+                text=text,
+                messageLink = messageLink
+            )
+            await ctx.send(
+                f"Reminder set for <t:{remindTime}:f>. I will notify you in <t:{remindTime}:R>."
+            )
+    except Exception as e:
+        await ctx.send(
+            f"An error occurred while setting the reminder. Please try again later. || ERROR : {e}||"
+        )
+    print(f"{reminderCollection.count_documents({})} done!")
+
+
 @bot.command()
 async def timer(ctx, *, message: str):
     """Sets a reminder for the specified time.
@@ -140,21 +216,28 @@ async def timer(ctx, *, message: str):
     print(
         f"givenTime: {reminderDetails['givenTime']} remindTime: {reminderDetails['remindTime']} string: {reminderDetails['text']}"
     )
+    
     givenTime = reminderDetails["givenTime"]
-    # print(reminderDetails["givenTime"])
-    # print(reminderDetails["remindTime"])
-    # print(reminderDetails["text"])
     remindTime = int(reminderDetails["remindTime"])
     text = reminderDetails["text"]
-    user = ctx.author.id
+    
+    userId = ctx.author.id
     channelId = ctx.channel.id
+    messageId = ctx.message.id
+    
     try:
         if givenTime == 0:
             await ctx.send(
                 "Please enter a valid time or use k!help remind for help on this command."
             )
         else:
-            await createReminder(user, channelId, remindTime, text)
+            await createReminder(
+                userId=userId,
+                channelId=channelId,
+                messageId=messageId,
+                remindTime=remindTime,
+                text=text,
+            )
             await ctx.send(
                 f"Reminder set for <t:{remindTime}:f>. I will notify you in <t:{remindTime}:R>."
             )
@@ -179,7 +262,7 @@ async def getreminders(ctx):
         for reminder in reminders:
             if currentTime < reminder["remindTime"]:
                 description += f'"<t:{reminder["remindTime"]}:f>" (<t:{reminder["remindTime"]}:R>) : {reminder["text"]}\n'
-                counter +=1
+                counter += 1
 
         if description == "":
             await ctx.send("...what are you looking for? theres nothing here for you.")
@@ -215,6 +298,8 @@ async def delReminders(ctx):
 async def test(ctx, *, message):
     print(ctx)
     print(message)
+    msg = await ctx.fetch_message(1182299703342276618)
+    await ctx.send(f"yamete kudasai: {msg}")
     print(ctx.channel.id, ctx.channel.name, ctx.guild.name, ctx.guild.id)
     await ctx.send(message)
 
