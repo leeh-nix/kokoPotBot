@@ -82,46 +82,48 @@ async def checkReminders():
         currentTime = datetime.datetime.now().timestamp() // 1
 
         # Get reminders from the database collection that match the current time
-        reminders = reminderCollection.find({"remindTime": {"$lte": currentTime}})
+        reminders = reminderCollection.find({"remindTime": {"$gte": currentTime}})
 
         for reminder in reminders:
             remindTime = reminder["remindTime"]
-            text = reminder["text"]
+            # text = reminder["text"]
             userId = reminder["userId"]
-            channelId = reminder["channelId"]
+            # messageLink = reminder["messageLink"]
 
-            messageId = str(reminder["messageId"])
-            messageLink = str(reminder["messageLink"])
-            if remindTime == currentTime:
-                print(reminder)
-                channel = bot.get_channel(channelId)
-                print("channel", channel)
-                print("messageId", messageId)
-                try:
-                    message = await channel.fetch_message(messageId)
-                    # interactionMsg = discord.Interaction.original_response(messageId)
-                    # print(interactionMsg)
+            try:
+                if remindTime == currentTime:
+                    try:
+                        print("Processing reminder:", reminder["text"])
+                        user = bot.get_user(userId)
+                        channel = await bot.fetch_channel(reminder["channelId"])
+                        print("Fetched channel:", channel)
+                        title = "I'm here to reminder you cutie!"
+                        description = reminder["text"]
+                        embed_url = reminder["messageLink"]
+                        color = discord.Colour(discord.Colour.random())
+                        embed = discord.Embed(
+                            title=title,
+                            description=description,
+                            url=embed_url,
+                            color=color,
+                            timestamp=datetime.datetime.fromtimestamp(remindTime),
+                        )
 
-                    # await (await discord.InteractionMessage.fetch(messageId)).reply(
-                    #     content=f"<@{userId}>, here's your reminder: {text}"
-                    # )
-                    # print("message", message)
+                        # embed.set_footer(
+                        #     text="Requested by " + user.name,
+                        #     icon_url=user.display_avatar,
+                        # )
+                        embed.set_author(name=user.name, icon_url=user.display_avatar)
+                        # embed.set_thumbnail(url=user.display_avatar)
 
-                    await message.reply(
-                        content=f"<@{userId}>, here's your reminder: {text}\n{messageLink}"
-                    )
-                except Exception as e:
-                    print(f"An error occurred: {e}")
+                        await channel.send(content=f"{user.mention}", embed=embed)
 
-            # if remindTime == currentTime:
-            #     await bot.get_channel(channelId).send(
-            #         f"<@{userId}>, here's your reminder: {text}"
-            #     )
-            # elif currentTime>remindTime:
-            # reminderCollection.delete_one({"userID": userId})
-        # Remove the reminder from the collection after processing
-        # print("Checked reminders.")
-        # Wait for a specific remindTime before checking again (e.g., 1 second)
+                        print("Message sent successfully.")
+
+                    except Exception as e:
+                        print("Error sending reminder:", e)
+            except Exception as e:
+                print("Error processing reminder:", e)
         await sleep(1)
 
 
@@ -165,35 +167,40 @@ async def reminder(
     currentTime = datetime.datetime.now().timestamp() // 1  # float
     givenTime = (days * 86400) + (hours * 3600) + (minutes * 60) + seconds  # int
     remindTime = int(currentTime) + int(givenTime)  # int
-
+    user = ctx.author
     print(f"givenTime: {givenTime}, remindTime: {remindTime} string: {message}")
     text = message
-    userId = ctx.author.id
+    userId = user.id
     messageId = ctx.message.id
-    guildId = ctx.guild.id
     channelId = ctx.channel.id
-    messageLink = f"https://discord.com/channels/{guildId}/{channelId}/{messageId}"
-    try:
-        if givenTime == 0:
-            await ctx.send(
-                "Please enter a valid time or use k!help remind for help on this command."
-            )
-        else:
-            await createReminder(
-                userId=userId,
-                channelId=channelId,
-                messageId=messageId,
-                remindTime=remindTime,
-                text=text,
-                messageLink = messageLink
-            )
-            await ctx.send(
-                f"Reminder set for <t:{remindTime}:f>. I will notify you in <t:{remindTime}:R>."
-            )
-    except Exception as e:
-        await ctx.send(
-            f"An error occurred while setting the reminder. Please try again later. || ERROR : {e}||"
+    messageLink = ctx.message.jump_url
+    if givenTime == 0:
+        description = "Please enter a valid timestamp."
+        color = discord.Color.red()
+    else:
+        await createReminder(
+            userId=userId,
+            channelId=channelId,
+            messageId=messageId,
+            remindTime=remindTime,
+            text=text,
+            messageLink=messageLink,
         )
+        # await ctx.channel.send("Reminder added successfully")
+        description = f"Reminder set for <t:{remindTime}:f>. I will notify you in <t:{remindTime}:R>."
+        color = discord.Color.green()
+    embed = discord.Embed(
+        title="Reminder Added",
+        description=description,
+        color=color,
+        timestamp=datetime.datetime.now(),
+    )
+    embed.set_footer(
+        text="Requested by " + user.name,
+        icon_url=user.display_avatar,
+    )
+    await ctx.send(embed=embed)
+
     print(f"{reminderCollection.count_documents({})} done!")
 
 
@@ -202,34 +209,31 @@ async def timer(ctx, *, message: str):
     """Sets a reminder for the specified time.
     Usage: reminder for <Reminder Time> <Reminder Text>
     """
-    # eg. k!timer 1d 2h 3m 4s to touch grass
     print("=================================================")
     print(message, type(message))
     remove_prefix_pattern = r"(?:reminder(?: for)?)\s+(.+)"
     matched = re.search(remove_prefix_pattern, message, re.IGNORECASE)
     message = matched.group(1)
     givenMessage = message
-    print("givenMessage", givenMessage)
+    user = ctx.author
 
     reminderDetails = extractReminderDetails(givenMessage)
 
     print(
         f"givenTime: {reminderDetails['givenTime']} remindTime: {reminderDetails['remindTime']} string: {reminderDetails['text']}"
     )
-    
+
     givenTime = reminderDetails["givenTime"]
     remindTime = int(reminderDetails["remindTime"])
     text = reminderDetails["text"]
-    
-    userId = ctx.author.id
+    userId = user.id
     channelId = ctx.channel.id
     messageId = ctx.message.id
-    
+    messageLink = ctx.message.jump_url
     try:
         if givenTime == 0:
-            await ctx.send(
-                "Please enter a valid time or use k!help remind for help on this command."
-            )
+            description = "Please enter a valid time or use k!help remind for help on this command."
+            color = discord.Color.red()
         else:
             await createReminder(
                 userId=userId,
@@ -237,15 +241,28 @@ async def timer(ctx, *, message: str):
                 messageId=messageId,
                 remindTime=remindTime,
                 text=text,
+                messageLink=messageLink,
             )
-            await ctx.send(
-                f"Reminder set for <t:{remindTime}:f>. I will notify you in <t:{remindTime}:R>."
+            # await ctx.channel.send("Reminder added successfully")
+            description = f"Reminder set for <t:{remindTime}:f>. I will notify you in <t:{remindTime}:R>."
+            color = discord.Color.green()
+            embed = discord.Embed(
+                title="Reminder Added",
+                description=description,
+                color=color,
+                timestamp=datetime.datetime.now(),
             )
+            embed.set_footer(
+                text="Requested by " + user.name,
+                icon_url=user.display_avatar,
+            )
+            await ctx.send(embed=embed)
+
+            print(f"{reminderCollection.count_documents({})} done!")
     except Exception as e:
         await ctx.send(
             f"An error occurred while setting the reminder. Please try again later. ||ERROR : {e}||"
         )
-    print(f"{reminderCollection.count_documents({})} done!")
 
 
 @bot.hybrid_command()
@@ -265,15 +282,16 @@ async def getreminders(ctx):
                 counter += 1
 
         if description == "":
-            await ctx.send("...what are you looking for? theres nothing here for you.")
-        else:
-            title = name
-            footer = f"Found {counter} reminders"
-            embed = discord.Embed(title=title, description=description)
-            embed.timestamp = datetime.datetime.utcnow()
-            embed.set_thumbnail(url=ctx.author.display_avatar)
-            embed.set_footer(text=footer)
-            await ctx.send(embed=embed, tts=False)
+            description = "...what are you looking for? theres nothing here for you."
+            # await ctx.send("...what are you looking for? theres nothing here for you.")
+
+        title = name
+        footer = f"Found {counter} reminders"
+        embed = discord.Embed(title=title, description=description)
+        embed.timestamp = datetime.datetime.utcnow()
+        embed.set_thumbnail(url=ctx.author.display_avatar)
+        embed.set_footer(text=footer)
+        await ctx.send(embed=embed, tts=False)
 
     except Exception as e:
         print(e)
@@ -298,10 +316,10 @@ async def delReminders(ctx):
 async def test(ctx, *, message):
     print(ctx)
     print(message)
-    msg = await ctx.fetch_message(1182299703342276618)
-    await ctx.send(f"yamete kudasai: {msg}")
     print(ctx.channel.id, ctx.channel.name, ctx.guild.name, ctx.guild.id)
-    await ctx.send(message)
+    messageLink = ctx.message.jump_url
+    print("message link: ", messageLink)
+    await ctx.send(f"{message}, {messageLink}")
 
 
 # Commands start from here
@@ -379,7 +397,7 @@ async def embed(
         title=title, description=description, color=color, url=embed_url
     )
     embed.set_footer(text=footer)
-    embed.timestamp = datetime.datetime.utcnow()
+    embed.timestamp = datetime.datetime.now()
     await ctx.send(content, embed=embed, tts=False)
 
 
