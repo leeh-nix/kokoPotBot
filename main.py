@@ -100,7 +100,7 @@ async def checkReminders():
                         title = "I'm here to reminder you cutie!"
                         description = reminder["text"]
                         embed_url = reminder["messageLink"]
-                        color = discord.Colour(discord.Colour.random())
+                        color = discord.Colour.random()
                         embed = discord.Embed(
                             title=title,
                             description=description,
