@@ -1,6 +1,7 @@
 import datetime
 import io
 import re
+import aiohttp
 import discord
 from discord.ext import commands
 import dotenv
@@ -86,9 +87,7 @@ async def checkReminders():
 
         for reminder in reminders:
             remindTime = reminder["remindTime"]
-            # text = reminder["text"]
             userId = reminder["userId"]
-            # messageLink = reminder["messageLink"]
 
             try:
                 if remindTime == currentTime:
@@ -283,11 +282,12 @@ async def getreminders(ctx):
 
         if description == "":
             description = "...what are you looking for? theres nothing here for you."
-            # await ctx.send("...what are you looking for? theres nothing here for you.")
 
         title = name
         footer = f"Found {counter} reminders"
-        embed = discord.Embed(title=title, description=description)
+        embed = discord.Embed(
+            title=title, color=discord.Color.magenta(), description=description
+        )
         embed.timestamp = datetime.datetime.utcnow()
         embed.set_thumbnail(url=ctx.author.display_avatar)
         embed.set_footer(text=footer)
@@ -320,9 +320,6 @@ async def test(ctx, *, message):
     messageLink = ctx.message.jump_url
     print("message link: ", messageLink)
     await ctx.send(f"{message}, {messageLink}")
-
-
-# Commands start from here
 
 
 # Slash command to check info of a user

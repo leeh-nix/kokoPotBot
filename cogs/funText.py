@@ -1,7 +1,9 @@
 import discord
 from discord.ext import commands
 from functions.checks import is_in_guild, is_owner
+
 # from functions.translator import translator
+
 
 class TextCommands(commands.Cog):
     def __init__(self, bot):
@@ -22,17 +24,19 @@ class TextCommands(commands.Cog):
         )
 
     @commands.hybrid_command()
-    @commands.check(is_owner)
+    # @commands.check(is_owner)
     async def pingalinga(self, ctx, amount: int, member: discord.Member, *, message):
         if amount < 15:
             for i in range(amount):
                 await ctx.send(f"{message} {member.mention}")
-        else: 
+        else:
             await ctx.send(f"{message} <@{ctx.author.id}> ||try amount <15 times||")
-    
+
     @pingalinga.error
     async def pingalinga_error(self, ctx, error):
-        await ctx.send(f"Either you don't have the privilage to use this command or you're using it wrongly\n`k!pingalinga <amount(15)> <member> <message>`")
+        await ctx.send(
+            f"Either you don't have the privilage to use this command or you're using it wrongly\n`k!pingalinga <amount(15)> <member> <message>`"
+        )
 
     @commands.command(aliases=["tq", "thankq", "ty"])
     async def thanks(self, message):
