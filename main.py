@@ -1,5 +1,6 @@
 import datetime
 import io
+import random
 import re
 import aiohttp
 import discord
@@ -108,10 +109,10 @@ async def checkReminders():
                             timestamp=datetime.datetime.fromtimestamp(remindTime),
                         )
 
-                        # embed.set_footer(
-                        #     text="Requested by " + user.name,
-                        #     icon_url=user.display_avatar,
-                        # )
+                        embed.set_footer(
+                            text=f"reminder id: {reminder['reminderId']}",
+                            icon_url=user.display_avatar,
+                        )
                         embed.set_author(name=user.name, icon_url=user.display_avatar)
                         # embed.set_thumbnail(url=user.display_avatar)
 
@@ -177,7 +178,9 @@ async def reminder(
         description = "Please enter a valid timestamp."
         color = discord.Color.red()
     else:
+        reminderId = random.randint(1000, 9999)
         await createReminder(
+            reminderId=reminderId,
             userId=userId,
             channelId=channelId,
             messageId=messageId,
@@ -186,7 +189,7 @@ async def reminder(
             messageLink=messageLink,
         )
         # await ctx.channel.send("Reminder added successfully")
-        description = f"Reminder set for <t:{remindTime}:f>. I will notify you in <t:{remindTime}:R>."
+        description = f"Reminder set for <t:{remindTime}:f>. I will notify you in <t:{remindTime}:R>, reminder id: `#{reminderId}`."
         color = discord.Color.green()
     embed = discord.Embed(
         title="Reminder Added",
@@ -234,7 +237,9 @@ async def timer(ctx, *, message: str):
             description = "Please enter a valid time or use k!help remind for help on this command."
             color = discord.Color.red()
         else:
+            reminderId = random.randint(1000, 9999)
             await createReminder(
+                reminderId=reminderId,
                 userId=userId,
                 channelId=channelId,
                 messageId=messageId,
@@ -243,7 +248,7 @@ async def timer(ctx, *, message: str):
                 messageLink=messageLink,
             )
             # await ctx.channel.send("Reminder added successfully")
-            description = f"Reminder set for <t:{remindTime}:f>. I will notify you in <t:{remindTime}:R>."
+            description = f"Reminder set for <t:{remindTime}:f>. I will notify you in <t:{remindTime}:R>, reminder id: `#{reminderId}`."
             color = discord.Color.green()
             embed = discord.Embed(
                 title="Reminder Added",
@@ -277,7 +282,7 @@ async def getreminders(ctx):
         reminders = reminderCollection.find({"userId": id})
         for reminder in reminders:
             if currentTime < reminder["remindTime"]:
-                description += f'"<t:{reminder["remindTime"]}:f>" (<t:{reminder["remindTime"]}:R>) : {reminder["text"]}\n'
+                description += f'\n`#{reminder["reminderId"]}`. "<t:{reminder["remindTime"]}:f>" (<t:{reminder["remindTime"]}:R>) : {reminder["text"]}\n'
                 counter += 1
 
         if description == "":
@@ -295,6 +300,32 @@ async def getreminders(ctx):
 
     except Exception as e:
         print(e)
+
+
+@bot.hybrid_command(name="delreminder", description="Deletes a reminder by reminderId.")
+async def delreminder(ctx, *, reminderid: int):
+    """Deletes a reminder by reminderId."""
+    try:
+        reminderId = reminderid
+        userId = ctx.author.id
+        reminders = reminderCollection.find({"userId": userId})
+
+        for reminder in reminders:
+            reminderUserId = reminder["userId"]
+
+            if userId == reminderUserId:
+                reminderCollection.delete_one({"reminderId": reminderId})
+                await ctx.send(f"Deleted reminder {reminderId}")
+                return  # Stop iterating once a matching reminder is found
+
+        # If no matching reminder is found
+        await ctx.send(f"Reminder {reminderId} not found for user {userId}")
+
+    except Exception as e:
+        print(e)
+        await ctx.send(
+            f"An error occurred while deleting the reminder. ```py\nERROR: {e}```"
+        )
 
 
 @bot.command(hidden=True)

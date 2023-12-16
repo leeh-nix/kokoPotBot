@@ -24,7 +24,9 @@ db = client.get_database("kokospotbot_db")
 reminderCollection = db.reminder  # collection: reminder
 
 
-async def createReminder(userId, channelId, messageId, remindTime, text, messageLink):
+async def createReminder(
+    reminderId, userId, channelId, messageId, remindTime, text, messageLink
+):
     """
     Create a reminder and insert it into the reminder collection.
 
@@ -39,6 +41,7 @@ async def createReminder(userId, channelId, messageId, remindTime, text, message
         None
     """
     newReminder = {
+        "reminderId": reminderId,
         "userId": userId,
         "channelId": channelId,
         "messageId": messageId,
