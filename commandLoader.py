@@ -5,6 +5,7 @@ from cogs.konachan import Konachan
 from cogs.send import Send
 from cogs.delete import Delete
 from cogs.github import Github
+from cogs.gemini import Gemini
 from commissions.commissions_event_handler import *
 
 COGS = [
@@ -16,6 +17,7 @@ COGS = [
     MoshiMoshi,
     Delete,
     Github,
+    Gemini,
 ]
 
 

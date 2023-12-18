@@ -306,6 +306,7 @@ async def getreminders(ctx):
 async def delreminder(ctx, *, reminderid: int):
     """Deletes a reminder by reminderId."""
     try:
+        found = False
         reminderId = reminderid
         userId = ctx.author.id
         reminders = reminderCollection.find({"userId": userId})
@@ -314,21 +315,25 @@ async def delreminder(ctx, *, reminderid: int):
             reminderUserId = reminder["userId"]
 
             if userId == reminderUserId:
-                reminderCollection.delete_one({"reminderId": reminderId})
-                await ctx.send(f"Deleted reminder {reminderId}")
-                return  # Stop iterating once a matching reminder is found
-
-        # If no matching reminder is found
-        await ctx.send(f"Reminder {reminderId} not found for user {userId}")
+                if reminderId == reminder["reminderId"]:
+                    reminderCollection.delete_one({"reminderId": reminderId})
+                    await ctx.send(f"Deleted reminder {reminderId}")
+                    found = True
+                    break
+                else:
+                    continue
+            break
+        if found == False:
+            await ctx.reply(f"Deleted all of the reminders.")
 
     except Exception as e:
         print(e)
-        await ctx.send(
-            f"An error occurred while deleting the reminder. ```py\nERROR: {e}```"
-        )
+        # await ctx.send(
+        #     f"An error occurred while deleting the reminder. ```py\nERROR: {e}```"
+        # )
 
 
-@bot.command(hidden=True)
+@bot.command(name="delallrem", hidden=True)
 @is_in_guild(607520631944118292)
 async def delReminders(ctx):
     """Deletes all remidner with remindTime less than current time."""
