@@ -9,6 +9,7 @@ class Gemini(commands.Cog):
 
     @commands.command(name="gemini")
     async def geminiPro(self, ctx, *, text):
+        await ctx.typing()
         res = sendResponse(text)
         embed = Embed(
             title=text,
