@@ -2,14 +2,11 @@ import datetime
 import io
 import random
 import re
-import aiohttp
 import discord
 from discord.ext import commands
 import dotenv
 import os
 from typing import Literal, Optional
-
-# from discord.ext.commands import check
 
 from cogs.reminder import *
 from commissions.commissions_event_handler import chatko
@@ -45,17 +42,16 @@ owners = {
     "bisskut": 757478713402064996,
     "sakura": 413155474800902154,
     "riley": 911968173606195250,
-    "marteeen": 840584597472936006,
     "marteeen_new": 1152840208635670528,
+    "shazam bolt": 829417226040901653,
 }
 burrman = [758978243842801669]
 
-channel_list = [
-    457217966505852928,
-    1048553311768420363,
-    864370415076769813,
-    1124341821154267196,
-]
+channelList = {
+    "koko bot pot testing": 1048553311768420363,
+    "bot-errors": 1139802368024784946,
+    "invoked-commands": 1139802190685405244,
+}
 
 activity = discord.Activity(
     name="with your emotions 😘", type=discord.ActivityType.playing
@@ -79,6 +75,7 @@ async def on_ready():
 
 
 async def checkReminders():
+    """Asynchronous function that checks reminders in the database collection and sends reminder messages to users."""
     print("Checked reminders.")
     while True:
         currentTime = datetime.datetime.now().timestamp() // 1
@@ -188,7 +185,6 @@ async def reminder(
             text=text,
             messageLink=messageLink,
         )
-        # await ctx.channel.send("Reminder added successfully")
         description = f"Reminder set for <t:{remindTime}:f>. I will notify you in <t:{remindTime}:R>, reminder id: `#{reminderId}`."
         color = discord.Color.green()
     embed = discord.Embed(
@@ -271,7 +267,7 @@ async def timer(ctx, *, message: str):
 
 @bot.hybrid_command()
 async def getreminders(ctx):
-    """Gets all reminders."""
+    """Gets all of the reminders for the user."""
     id = ctx.author.id
     name = ctx.author.name
     print("get reminders for: ", name)
@@ -426,6 +422,17 @@ async def embed(
     footer: Optional[str] = None,
     embed_url: Optional[str] = None,
 ):
+    """Create and send an embed.
+
+    Args:
+        ctx (discord.Context): _description_
+        content (str): Content to send with the embed
+        title (str): Title for the embed
+        description (str): Description for the embed
+        color (discord.Colour): Color for the embed
+        footer (Optional[str], optional): Any footer for the embed. Defaults to None.
+        embed_url (Optional[str], optional): Embed url. Defaults to None.
+    """
     embed = discord.Embed(
         title=title, description=description, color=color, url=embed_url
     )
@@ -438,20 +445,36 @@ async def embed(
 
 
 async def on_command_error(ctx, error):
-    print("oncommanderror called", error)
-    channel = ctx.channel.id
-    await bot.get_channel(1139802368024784946).send(
-        f"ctx: <#{channel}>\n```\nError: {error}```"
+    print("On command error: ", error)
+    user = ctx.author
+    channel = ctx.channel
+    embed = discord.Embed(
+        description=f"```{error}```\n{ctx.message.jump_url or 'No link found'}",
+        color=discord.Color.red(),
+        timestamp=datetime.datetime.now(),
     )
+    embed.set_footer(
+        text=("Requested by " + user.name) or None,
+        icon_url=user.display_avatar or None,
+    )
+    await ctx.reply(embed=embed, delete_after=10)
+    await bot.get_channel(channelList["bot-errors"]).send(embed=embed)
 
 
 async def on_command_completion(ctx):
-    print("on command completion called")
-    channel = ctx.channel.id
-    await bot.get_channel(1139802190685405244).send(
-        f"ctx: <#{channel}>\n{ctx.message.jump_url}>\n =============================",
-        suppress_embeds=True,
+    print("Command successfully executed")
+    user = ctx.author
+    embed = discord.Embed(
+        title=ctx.command.name,
+        description=ctx.message.jump_url,
+        color=discord.Color.blue(),
+        timestamp=datetime.datetime.now(),
     )
+    embed.set_footer(
+        text="Requested by " + user.name,
+        icon_url=user.display_avatar,
+    )
+    await bot.get_channel(channelList["invoked-commands"]).send(embed=embed)
 
 
 async def on_message(msg):
@@ -468,6 +491,8 @@ async def on_message(msg):
         except Exception as e:
             print(member.name)
             print(e)
+
+    # COMMISSION PART: (start)
     if (
         member.id in burrman
         and member.is_on_mobile()
@@ -477,7 +502,7 @@ async def on_message(msg):
         await msg.channel.send("typing from mobile eww")
         await msg.channel.send(f"# {member.mention} **PC SE AO** 🤢 🤮 ")
     if member.id in owners.values():
-        if msg.content.lower().startswith("chatko"):
+        if msg.content.lower() == "chatko":
             print("started with chatko")
             try:
                 await chatko(msg, modified_ctx)
@@ -489,9 +514,10 @@ async def on_message(msg):
 
     # passing the message command for other bot commands if not chatko not found
     # await bot.process_commands(msg)
+    # COMMISSION PART: (end)
 
 
-# ============================================================================================================================
+# ============================================================================================================================ #
 
 
 EVENTS = [on_command_error, on_command_completion, on_message]

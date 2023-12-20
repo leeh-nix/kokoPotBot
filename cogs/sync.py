@@ -14,6 +14,17 @@ class Sync(commands.Cog):
         guilds: commands.Greedy[discord.Object],
         spec: Optional[Literal["~", "*", "^"]] = None,
     ) -> None:
+        """
+        Synchronize the command tree with one or more guilds.
+        Parameters:
+            ctx (commands.Context): The context of the command invocation.
+            guilds (commands.Greedy[discord.Object]): The guilds to sync with.
+            spec (Optional[Literal["~", "*", "^"]]): The sync specification.
+                - "~": Sync the entire command tree of the current guild.
+                - "*": Copy the global command tree to the current guild and sync.
+                - "^": Clear all commands in the current guild and sync.
+                If None, sync the entire command tree globally.
+        """
         if not guilds:
             if spec == "~":
                 synced = await ctx.bot.tree.sync(guild=ctx.guild)
