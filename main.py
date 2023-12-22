@@ -81,6 +81,7 @@ async def checkReminders():
         currentTime = datetime.datetime.now().timestamp() // 1
 
         # Get reminders from the database collection that match the current time
+        # TODO - try doing "$lte" logic for the "remindTime"
         reminders = reminderCollection.find({"remindTime": {"$gte": currentTime}})
 
         for reminder in reminders:
@@ -412,8 +413,8 @@ async def imageresize(
             await ctx.send(file=discord.File(image_file, "image.png"))
 
 
-@bot.hybrid_command()
-async def embed(
+@bot.hybrid_command(name="embed")
+async def embedSender(
     ctx,
     content,
     title,
@@ -447,8 +448,8 @@ async def embed(
 async def on_command_error(ctx, error):
     print("On command error: ", error)
     user = ctx.author
-    channel = ctx.channel
     embed = discord.Embed(
+        title=ctx.command.name,
         description=f"```{error}```\n{ctx.message.jump_url or 'No link found'}",
         color=discord.Color.red(),
         timestamp=datetime.datetime.now(),
@@ -462,10 +463,11 @@ async def on_command_error(ctx, error):
 
 
 async def on_command_completion(ctx):
-    print("Command successfully executed")
+    commandName = ctx.command.name
     user = ctx.author
+    print(f"Command successfully executed: {commandName} by {user.name}")
     embed = discord.Embed(
-        title=ctx.command.name,
+        title=commandName,
         description=ctx.message.jump_url,
         color=discord.Color.blue(),
         timestamp=datetime.datetime.now(),
