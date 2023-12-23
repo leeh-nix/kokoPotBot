@@ -1,5 +1,6 @@
 from functions.kokoshotRequest import kokoshotRequest
 from discord.ext import commands
+from discord import Embed, Colour, File
 from typing import Optional, Literal
 import dotenv
 import os
@@ -12,7 +13,7 @@ class Kokoshot(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.hybrid_command(aliases=["ss"])
+    @commands.hybrid_command(aliases=["ks"])
     async def kokoshot(
         self,
         ctx,
@@ -40,6 +41,15 @@ class Kokoshot(commands.Cog):
         Returns:
             None
         """
-        await ctx.send(
-            f"https://api.screenshotmachine.com/?key={CUSTOMER_KEY}&url={url}&cacheLimit={cachelimit}&delay={delay}&zoom={zoom}&device={device}&dimension={dimension}",
+        imagedata = kokoshotRequest(url, cachelimit, delay, zoom, dimension, device)
+        embed = Embed(
+            title="Here you go",
+            url=url,
+            color=Colour(0x00FF00),
+            timestamp=ctx.message.created_at,
         )
+
+        file = File(imagedata, filename="image.png")
+        embed = Embed()
+        embed.set_image(url="attachment://image.png")
+        await ctx.send(file=file, embed=embed)

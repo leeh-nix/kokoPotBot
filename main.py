@@ -442,6 +442,8 @@ async def embedSender(
     await ctx.send(content, embed=embed, tts=False)
 
 
+# REVIEW - https://stackoverflow.com/questions/75348702/how-to-edit-images-in-embeds-discord-py
+
 # EVENTS
 
 

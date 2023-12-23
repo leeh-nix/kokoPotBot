@@ -11,26 +11,15 @@ secret_phrase = ""  # leave secret phrase empty, if not needed
 
 def kokoshotRequest(url, cachelimit, delay, zoom, dimension, device):
     # to save screenshot as an image check the api guide for more details
-    url = f"""https://api.screenshotlayer.com/api/capture?
-    key={CUSTOMER_KEY}&
-    url={url}&
-    cacheLimit={cachelimit}&
-    delay={delay}&
-    zoom={zoom}&
-    dimension={dimension}&
-    device={device}"""
-
+    url = f"""https://api.screenshotmachine.com/?key={CUSTOMER_KEY}&url={url}&cacheLimit={cachelimit}&delay={delay}&zoom={zoom}&device={device}&dimension={dimension}"""
+    # &click=flex--item6%20s-btn%20s-btn__filled%20js-accept-cookies%20js-consent-banner-hide
+    # &cookies=SOCS=CAESEwgDEgk0ODE3Nzk3MjQaAmVuIAEaBgiA_LyaBg
     response = requests.get(url)
 
-    if response.status_code == 200:
-        # Convert the image data to BytesIO
-        image_data = BytesIO(response.content)
-
-        # Return the BytesIO object
-        return image_data
-    else:
-        print("Failed to capture screenshot. Status code:", response.status_code)
-    return None
+    image_data = BytesIO(response.content)
+    # image = image_data.read()
+    # Return the BytesIO object
+    return image_data
 
 
 # print(
