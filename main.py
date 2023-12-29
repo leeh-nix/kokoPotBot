@@ -267,7 +267,7 @@ async def timer(ctx, *, message: str):
 
 
 @bot.hybrid_command()
-async def getreminders(ctx):
+async def getreminders(ctx: commands.Context):
     """Gets all of the reminders for the user."""
     id = ctx.author.id
     name = ctx.author.name
@@ -293,7 +293,7 @@ async def getreminders(ctx):
         embed.timestamp = datetime.datetime.utcnow()
         embed.set_thumbnail(url=ctx.author.display_avatar)
         embed.set_footer(text=footer)
-        await ctx.send(embed=embed, tts=False)
+        await ctx.send(embed=embed, tts=False, ephemeral=True)
 
     except Exception as e:
         print(e)
@@ -352,6 +352,7 @@ async def test(ctx, *, message):
     print(ctx.channel.id, ctx.channel.name, ctx.guild.name, ctx.guild.id)
     messageLink = ctx.message.jump_url
     print("message link: ", messageLink)
+    ctx.send_help(test)
     await ctx.send(f"{message}, {messageLink}")
 
 
@@ -447,7 +448,7 @@ async def embedSender(
 # EVENTS
 
 
-async def on_command_error(ctx, error):
+async def on_command_error(ctx: commands.Context, error):
     print("On command error: ", error)
     user = ctx.author
     embed = discord.Embed(
@@ -460,7 +461,7 @@ async def on_command_error(ctx, error):
         text=("Requested by " + user.name) or None,
         icon_url=user.display_avatar or None,
     )
-    await ctx.reply(embed=embed, delete_after=10)
+    await ctx.send(embed=embed, ephemeral=True)
     await bot.get_channel(channelList["bot-errors"]).send(embed=embed)
 
 
