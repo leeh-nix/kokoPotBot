@@ -2,35 +2,33 @@ from functions.popCatRequests import *
 from discord.ext import commands
 import discord
 
+
 class popCatAPIImageCommands(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
     @commands.command()
-    async def encode(ctx, *, message):
+    async def encode(self, ctx: commands.Context, *, message):
         """Encode your message in binary"""
         message = "".join(message)
         result = encoding(message)
         await ctx.send(f"The encoded message: {result}")
 
-
     @commands.command()
-    async def decode(ctx, *, message):
+    async def decode(self, ctx: commands.Context, *, message):
         """Decode your binary message"""
         message = "".join(message)
         result = decoding(message)
         await ctx.send(f"The decoded message: {result}")
 
-
     @commands.command()
-    async def doublestruck(ctx, *, message):
+    async def doublestruck(self, ctx: commands.Context, *, message):
         message = "".join(message)
         result = doublestruckAPI(message)
         await ctx.send(f"{result}")
 
-
     @commands.command()
-    async def clown(ctx, message, *args):
+    async def clown(self, ctx: commands.Context, message, *args):
         # url = f"{API_BASE_URL}/clown?image={message}"
         """You're a clown
 
@@ -53,9 +51,8 @@ class popCatAPIImageCommands(commands.Cog):
         with open("clown_image.png", "rb") as file:
             await ctx.send(file=discord.File(file, "clown_image.png"))
 
-
     @commands.command()
-    async def advertise(ctx, message):
+    async def advertise(self, ctx: commands.Context, message):
         # url = f"{API_BASE_URL}/ad?image={message}"
         """Advertise your image
 
@@ -78,10 +75,9 @@ class popCatAPIImageCommands(commands.Cog):
         with open("advertise_image.png", "rb") as file:
             await ctx.send(file=discord.File(file, "advertise_image.png"))
 
-
     @commands.command()
-    async def uncover(ctx, message):
-        """Uncover the poster 
+    async def uncover(self, ctx: commands.Context, message):
+        """Uncover the poster
 
         Args:
             message (image link): Provide image link ending with (.jpg, .jpeg, .png)
@@ -103,9 +99,8 @@ class popCatAPIImageCommands(commands.Cog):
         with open("uncover_image.png", "rb") as file:
             await ctx.send(file=discord.File(file, "uncover_image.png"))
 
-
     @commands.command()
-    async def jail(ctx, message):
+    async def jail(self, ctx: commands.Context, message):
         """Sends the image with adding a layer of jail bars
 
         Args:
@@ -128,20 +123,19 @@ class popCatAPIImageCommands(commands.Cog):
 
         with open("jail_image.png", "rb") as file:
             await ctx.send(file=discord.File(file, "jail_image.png"))
-            
-            
+
     @clown.error
-    async def clown_error(self, ctx, error):
+    async def clown_error(self, ctx: commands.Context, error):
         await ctx.send(error)
-    
+
     @jail.error
-    async def jail_error(self, ctx, error):
+    async def jail_error(self, ctx: commands.Context, error):
         await ctx.send(error)
-    
+
     @uncover.error
-    async def uncover_error(self, ctx, error):
+    async def uncover_error(self, ctx: commands.Context, error):
         await ctx.send(error)
-        
+
     @advertise.error
-    async def advertise_error(self, ctx, error):
+    async def advertise_error(self, ctx: commands.Context, error):
         await ctx.send(error)

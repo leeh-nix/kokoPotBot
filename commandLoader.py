@@ -6,6 +6,7 @@ from cogs.send import Send
 from cogs.delete import Delete
 from cogs.github import Github
 from cogs.gemini import Gemini
+from cogs.reminder import Reminder
 
 # from cogs.kokoshot import Kokoshot
 from commissions.commissions_event_handler import *
@@ -20,6 +21,7 @@ COGS = [
     Delete,
     Github,
     Gemini,
+    Reminder
     # Kokoshot,
 ]
 
