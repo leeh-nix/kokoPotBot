@@ -149,7 +149,7 @@ class Reminder(commands.Cog):
                 description = "Please enter a valid time or use k!help remind for help on this command."
                 color = Color.red()
             else:
-                reminderId = randint(1000, 9999)
+                reminderId = randint(10000, 99999)
                 await createReminder(
                     reminderId=reminderId,
                     userId=userId,

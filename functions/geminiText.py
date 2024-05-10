@@ -66,10 +66,12 @@ def sendResponse(text):
                     random.randint(0, len(funnyReplies[res.category]) - 1)
                 ]
                 break
+            else:
+                result = "If you really want an answer for this then I dare you to ask it again..."
+                break
     else:
         result = response.text
     return result
 
 
-# print(sendResponse("sexual content"))
-# print(sendResponse("what is love in 50 words"))
+# print(sendResponse("Write a story about a magic backpack"))

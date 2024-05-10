@@ -8,7 +8,7 @@ class Gemini(commands.Cog):
         self.bot = bot
 
     @commands.hybrid_command(name="gemini")
-    async def geminiPro(self, ctx, *, text):
+    async def geminiPro(self, ctx: commands.Context, *, text):
         await ctx.typing()
         try:
             res = sendResponse(text)
