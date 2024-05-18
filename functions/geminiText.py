@@ -21,7 +21,8 @@ genai.configure(api_key=API_KEY)
 
 
 model_pro = genai.GenerativeModel(
-    model_name="gemini-pro",
+    # model_name="gemini-pro",
+    model_name="gemini-1.5-flash-latest",
     safety_settings=None,
 )
 # model_pro_vision = genai.GenerativeModel("gemini-pro-vision")
@@ -75,3 +76,8 @@ def sendResponse(text):
 
 
 # print(sendResponse("Write a story about a magic backpack"))
+
+# import pprint
+
+# for model in genai.list_models():
+# pprint.pprint(model)

@@ -13,6 +13,7 @@ from commissions.commissions_event_handler import chatko
 
 from functions.extractReminderDetails import extractReminderDetails
 from functions.imageTransform import imageTransform
+from functions.geminiVision import geminiVision
 from functions.checks import is_owner, is_in_guild
 
 from commandLoader import add_cogs
@@ -296,6 +297,17 @@ async def on_message(msg):
         except Exception as e:
             print(member.name)
             print(e)
+
+    # Gemini Vision model
+    if content.startswith("hey gemini"):
+        print("gemini vision")
+        img: discord.Attachment = msg.attachments[0]
+        img = await img.read()
+        try:
+            res = geminiVision(content, img)
+        except Exception as e:
+            res = "Error: " + str(e)
+        await msg.channel.send(res)
 
     # COMMISSION PART: (start)
     if (
