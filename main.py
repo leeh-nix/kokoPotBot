@@ -148,13 +148,11 @@ async def info_error(ctx: commands.Context, error):
 @bot.command(hidden=True)
 @commands.check(is_owner)
 async def test(ctx: commands.Context, *, message):
-    print(ctx)
     print(message)
     print(ctx.channel.id, ctx.channel.name, ctx.guild.name, ctx.guild.id)
-    messageLink = ctx.message.jump_url
-    print("message link: ", messageLink)
-    ctx.send_help(test)
-    await ctx.send(f"{message}, {messageLink}")
+    await ctx.send_help(test)
+    await ctx.send(f"{ctx.message.reference}")
+    await ctx.send(f"{message}")
 
 
 # Slash command to check info of a user
@@ -316,8 +314,7 @@ async def on_message(msg):
         and not member.desktop_status == "invisible"
     ):
         print("started with mobile")
-        await msg.channel.send("typing from mobile eww")
-        await msg.channel.send(f"# {member.mention} **PC SE AO** 🤢 🤮 ")
+        await msg.channel.send(f"{member.mention} **PC SE AO** 🤢 🤮 ")
     if member.id in owners.values():
         if msg.content.lower() == "chatko":
             print("started with chatko")

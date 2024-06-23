@@ -1,3 +1,4 @@
+from logging import Filter
 from cogs.popCatAPI import popCatAPIImageCommands
 from cogs.sync import Sync
 from cogs.funText import TextCommands
@@ -7,6 +8,7 @@ from cogs.delete import Delete
 from cogs.github import Github
 from cogs.gemini import Gemini
 from cogs.reminder import Reminder
+from cogs.filterFusion import FilterFusion
 
 # from cogs.kokoshot import Kokoshot
 from commissions.commissions_event_handler import *
@@ -21,7 +23,8 @@ COGS = [
     Delete,
     Github,
     Gemini,
-    Reminder
+    Reminder,
+    FilterFusion,
     # Kokoshot,
 ]
 

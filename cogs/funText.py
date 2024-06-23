@@ -24,9 +24,9 @@ class TextCommands(commands.Cog):
         )
 
     @commands.hybrid_command()
-    # @commands.check(is_owner)
+    @commands.check(is_owner)
     async def pingalinga(self, ctx, amount: int, member: discord.Member, *, message):
-        if amount < 15:
+        if amount <= 15:
             for i in range(amount):
                 await ctx.send(f"{message} {member.mention}")
         else:
@@ -37,6 +37,17 @@ class TextCommands(commands.Cog):
         await ctx.send(
             f"Either you don't have the privilage to use this command or you're using it wrongly\n`k!pingalinga <amount(15)> <member> <message>`"
         )
+
+    # can not check if the user's invisible or not atm so it always returns the else part
+    # @commands.hybrid_command()
+    # async def expose(self, ctx: commands.Context, member: discord.Member):
+    #     if member.desktop_status == "invisible":
+    #         print("EXPOSED")
+    #         await ctx.send(
+    #             f"EXPOSED!! 😱😈 {member.mention} is online. `{member.activity}`"
+    #         )
+    #     else:
+    #         await ctx.send("welp no exposing today")
 
     @commands.command(aliases=["tq", "thankq", "ty"])
     async def thanks(self, message):
