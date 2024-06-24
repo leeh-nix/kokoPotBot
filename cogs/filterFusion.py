@@ -1,6 +1,5 @@
 import io
 import re
-from weakref import ref
 import discord
 from discord.ext import commands
 import requests
