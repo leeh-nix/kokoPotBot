@@ -19,27 +19,33 @@ class FilterFusion(commands.Cog):
         pattern = r"\b((https:).*(\.(png)|(jpg)|(jpeg)|(webp)))"
 
         matches = re.findall(pattern, messageContent)
-        print(matches[0][0])
 
-        if matches:
-            image_url = matches[0][0]
-            data = {"image_url": image_url}
-            response = requests.request("POST", self.invert_api, data=data)
-        # print("RESPONSE", response)
-        # print("RESPONSE CONTENT", response.content)
+        try:
+            if matches:
+                print(matches[0][0])
+                image_url = matches[0][0]
+                data = {"image_url": image_url}
+                response = requests.request("POST", self.invert_api, data=data)
+            # print("RESPONSE", response)
+            # print("RESPONSE CONTENT", response.content)
 
-        else:
-            await discord.Attachment.save(referencedMessage.attachments[0], "image.png")
-            image = "image.png"
-            files = {"image": open(image, "rb")}
-            response = requests.post(
-                self.invert_api,
-                files=files,
-            )
+            else:
+                await discord.Attachment.save(
+                    referencedMessage.attachments[0], "image.png"
+                )
+                image = "image.png"
+                files = {"image": open(image, "rb")}
+                response = requests.post(
+                    self.invert_api,
+                    files=files,
+                )
 
-        with io.BytesIO(response.content) as image_file:
-            image_file.seek(0)
-            await ctx.typing()
-            await ctx.send(file=discord.File(image_file, "inverted_image.png"))
-            await ctx.message.delete()
-            await referencedMessage.delete()
+            with io.BytesIO(response.content) as image_file:
+                image_file.seek(0)
+                await ctx.typing()
+                await ctx.send(file=discord.File(image_file, "inverted_image.png"))
+                await ctx.message.delete()
+                # await referencedMessage.delete()
+        except Exception as e:
+            print(e)
+            await ctx.send(f"```{e}```")
