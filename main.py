@@ -328,8 +328,13 @@ async def on_message(msg):
         But you must only respond with one insult in output. NO salutations, NO here's this that nothing nada.""",
             )
 
+            generation_config = genai.types.GenerationConfig(
+                temperature=1.5,
+            )
+
             response = model.generate_content(
                 contents="one liner insult for example: `# Get out and uninstall valorant... 👈🤓`",
+                generation_config=generation_config,
             )
             print("invoking chatko")
             try:
@@ -337,7 +342,7 @@ async def on_message(msg):
             except Exception as e:
                 print(e, member.name)
             finally:
-                await msg.channel.send(f"# {response.text}")
+                await msg.channel.send(f"# hehe {response.text}")
 
     # passing the message command for other bot commands if not chatko not found
     # await bot.process_commands(msg)
