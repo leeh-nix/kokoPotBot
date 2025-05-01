@@ -342,7 +342,7 @@ async def on_message(msg):
             except Exception as e:
                 print(e, member.name)
             finally:
-                await msg.channel.send(f"# hehe {response.text}")
+                await msg.channel.send(f"# {response.text}")
 
     # passing the message command for other bot commands if not chatko not found
     # await bot.process_commands(msg)
