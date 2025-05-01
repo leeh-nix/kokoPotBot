@@ -8,7 +8,9 @@ class Gemini(commands.Cog):
         self.bot = bot
 
     @commands.hybrid_command(name="gemini")
-    async def geminiPro(self, ctx: commands.Context, *, text):
+    async def geminiPro(
+        self, ctx: commands.Context, *, text
+    ):  # input an option for gemini-pro and gemini-1.5-flash latest
         await ctx.typing()
         try:
             res = sendResponse(text)
@@ -19,6 +21,6 @@ class Gemini(commands.Cog):
             title=title,
             description=res,
             timestamp=ctx.message.created_at,
-            color=Color.dark_teal(),
+            color=Color.dark_teal(),  # f950d4
         )
         await ctx.send(embed=embed)

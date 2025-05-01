@@ -6,7 +6,7 @@ discord.py
 pillow
 pymongo
 python-dotenv
-requests==2.31.0
+requests>=2.32.0
 google-generativeai
 httpcore==0.15.*
 httpx>=0.23.0

@@ -317,14 +317,27 @@ async def on_message(msg):
         await msg.channel.send(f"{member.mention} **PC SE AO** 🤢 🤮 ")
     if member.id in owners.values():
         if msg.content.lower() == "chatko":
-            print("started with chatko")
+            from functions.geminiText import genai
+
+            model = genai.GenerativeModel(
+                model_name="gemini-1.5-flash-latest",
+                safety_settings=None,
+                system_instruction="""your response is being sent when the members are kicked from vc. 
+        So you're task is to reply with a small creative insult and it need not to be related to games. it can be anything;
+        from tech to education to job/unemployment and race, sex, relationship status with random dank emojis at the end... 
+        But you must only respond with one insult in output. NO salutations, NO here's this that nothing nada.""",
+            )
+
+            response = model.generate_content(
+                contents="one liner insult for example: `# Get out and uninstall valorant... 👈🤓`",
+            )
+            print("invoking chatko")
             try:
                 await chatko(msg, modified_ctx)
-                print("chatko")
             except Exception as e:
                 print(e, member.name)
             finally:
-                await msg.reply("# get out and uninstall valo... 👈🤓")
+                await msg.channel.send(f"# {response.text}")
 
     # passing the message command for other bot commands if not chatko not found
     # await bot.process_commands(msg)

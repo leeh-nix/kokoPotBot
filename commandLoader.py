@@ -2,13 +2,16 @@ from logging import Filter
 from cogs.popCatAPI import popCatAPIImageCommands
 from cogs.sync import Sync
 from cogs.funText import TextCommands
-from cogs.konachan import Konachan
+
+# from cogs.konachan import Konachan
 from cogs.send import Send
 from cogs.delete import Delete
 from cogs.github import Github
 from cogs.gemini import Gemini
 from cogs.reminder import Reminder
 from cogs.filterFusion import FilterFusion
+
+# from cogs.stableDiffusion import StableDiffusion
 
 # from cogs.kokoshot import Kokoshot
 from commissions.commissions_event_handler import *
@@ -17,7 +20,7 @@ COGS = [
     Sync,
     TextCommands,
     popCatAPIImageCommands,
-    Konachan,
+    # Konachan,
     Send,
     MoshiMoshi,
     Delete,
@@ -25,6 +28,7 @@ COGS = [
     Gemini,
     Reminder,
     FilterFusion,
+    # StableDiffusion,
     # Kokoshot,
 ]
 

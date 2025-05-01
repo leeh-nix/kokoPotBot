@@ -1,4 +1,6 @@
+from pyexpat import model
 from functions.checks import *
+from functions.geminiText import genai
 
 # from commissions.functions import chatko
 from discord.ext import commands
@@ -11,7 +13,7 @@ async def chatko(ctx, modified_ctx):
     if ctx.author.voice and ctx.author.voice.channel:
         voice_channel = ctx.author.voice.channel
         for member in voice_channel.members:
-            await modified_ctx.send(f"{member.mention} kal ana kall")
+            await modified_ctx.send(f"{member.display_name} kal ana kall")
             await member.move_to(None)
 
 
