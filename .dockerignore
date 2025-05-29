@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+*.pyo
+.git/
+.env
+test.py
+konachanImgExtractor.py
+botkosé.png
+__pycache__
+.vscode/settings.json

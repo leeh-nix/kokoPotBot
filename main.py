@@ -65,7 +65,7 @@ bot = commands.Bot(
 )
 
 # MoshiMoshi server
-MoshiMoshi: discord.Guild.id = 852092404604469278
+MoshiMoshi: discord.Guild.id = 852092404604469278 # type: ignore
 
 
 # Confirmation on bot login

@@ -28,8 +28,6 @@ COGS = [
     Gemini,
     Reminder,
     FilterFusion,
-    # StableDiffusion,
-    # Kokoshot,
 ]
 
 

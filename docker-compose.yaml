@@ -1,0 +1,11 @@
+services:
+  bot:
+    build: .
+    container_name: botkose
+    restart: always
+    environment:
+      - TOKEN=${TOKEN}
+      - URI=${URI}
+      - URL_ENDPOINT=${URL_ENDPOINT}
+      - API=${API}
+    command: python main.py
