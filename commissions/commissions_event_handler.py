@@ -1,6 +1,4 @@
-from pyexpat import model
 from functions.checks import *
-from functions.geminiText import genai
 
 # from commissions.functions import chatko
 from discord.ext import commands
